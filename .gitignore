@@ -2,11 +2,14 @@
 # Created:2024-04-02
 
 # 忽略崩溃日志
-profile/"crash reports/"
+profile/crash\ reports/
+
 # 忽略插件更新内容
 profile/component-updates/
+
 # 忽略插件缓存，如js_smooth_cache
 profile/*cache/
+
 # 忽略jscript panel 3 产生的资源
 profile/js_data/
 
