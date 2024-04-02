@@ -1,3 +1,18 @@
+# foobar2000配置忽略
+# Created:2024-04-02
+
+# 忽略崩溃日志
+profile/"crash reports"/
+# 忽略插件更新内容
+profile/component-updates/
+# 忽略插件缓存，如js_smooth_cache
+profile/*cache/
+# 忽略foo_enhanced_playcount插件配置，里面可能带Last.FM token信息
+profile/configuration/foo_enhanced_playcount.dll.cfg
+
+
+# 下面是Python模板内容
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
