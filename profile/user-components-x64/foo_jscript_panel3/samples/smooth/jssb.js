@@ -383,7 +383,7 @@ function oBrowser() {
 					gr.WriteText(group.album, g_font_bold.str, normal_text, ax + text_left, ay + cover_size + (fh * 0.7), cover_size, fh, 2, 0, 1, 1);
 					gr.WriteText(str, g_font.str, fader_txt, ax + text_left, ay + cover_size + (fh * 0.7) + fh, cover_size, fh * 2, 2, 0, 1, 1);
 				} else {
-					gr.WriteText(group.artist, g_font_bold.str, normal_text, ax + text_left, ay + cover_size + text_left, cover_size, fh * 3, 2, 2);
+					gr.WriteText(group.artist, g_font_bold.str, normal_text, ax + text_left, ay + cover_size + text_left, cover_size, fh * 3, 2, 2, 3, 1);
 				}
 
 				break;
@@ -639,6 +639,7 @@ function oBrowser() {
 
 		menu.AppendMenuItem(CheckMenuIf(ppt.showAllItem), 40, "Show all items");
 		menu.AppendMenuItem(GetMenuFlags(ppt.panelMode == 1 || ppt.panelMode == 2, ppt.autoFill), 41, "Album Art: Auto-fill");
+		menu.AppendMenuItem(MF_STRING, 42, "Clear Album Art cache");
 		menu.AppendMenuSeparator();
 
 		menu.AppendMenuItem(MF_STRING, 50, "Configure...");
@@ -711,6 +712,11 @@ function oBrowser() {
 		case 41:
 			ppt.autoFill = !ppt.autoFill;
 			window.SetProperty("SMOOTH.AUTO.FILL", ppt.autoFill);
+			images.clear();
+			this.populate();
+			break;
+		case 42:
+			utils.RemoveFolderRecursive(CACHE_FOLDER, 1);
 			images.clear();
 			this.populate();
 			break;
