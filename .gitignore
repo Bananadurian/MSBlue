@@ -15,7 +15,7 @@ profile/js_data/
 
 # 忽略foo_enhanced_playcount插件配置，里面可能带Last.FM token信息
 profile/configuration/foo_enhanced_playcount.dll.cfg
-
+profile/configuration/foo_scrobble.dll.cfg
 
 # 下面是Python模板内容
 
