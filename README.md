@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-![](/imgs/UI1.jpg)
+![](/imgs/UI.png)
 
 Foobar2000 Customized Interface
 

@@ -1,3 +1,5 @@
 file://E:\Music\Z00-NotArchived\2019-摩天动物园[香港首版][WAV]\2019-摩天动物园[香港首版][WAV]\[原始文件]	Object not found	133571233348224798
 file://E:\Music\A03-Korean\泫雅\2015 A+ [320-MP3]	Object not found	133574525281976780
 file://E:\Music\A02-English\Adele\2015 25 [Vinyl-LP-1bit-5.6MHz-DFF]	Object not found	133574741967857312
+file://E:\Music\A04-Japanese\XG\2023 SHOOTING STAR [16-44-FLAC]	Object not found	133666330111439590
+file://E:\Music\A04-Japanese\XG\2023 NEW DNA [16-44-FLAC]	Object not found	133666333673779644
