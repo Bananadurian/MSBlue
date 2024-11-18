@@ -1,70 +1,34 @@
 // ==PREPROCESSOR==
 // @name "Last.fm Bio + Images"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // @import "%fb2k_component_path%samples\js\lastfm.js"
-// @import "%fb2k_component_path%samples\js\thumbs.js"
-// @import "%fb2k_component_path%samples\js\text.js"
+// @import "%fb2k_component_path%samples\js\images.js"
+// @import "%fb2k_component_path%samples\js\lastfm_bio.js"
 // ==/PREPROCESSOR==
 
 var margin = _scale(12);
 
 var panel = new _panel();
 var lastfm = new _lastfm();
-var text = new _text('lastfm_bio', 0, 0, 0, 0);
-var thumbs = new _thumbs();
+var lastfm_bio = new _lastfm_bio(0, 0, 0, 0);
+var images = new _images();
 var white = RGB(255, 255, 255);
 
-text.paint = function (gr) {
-	var y = thumbs.properties.layout.value == 0 ? margin : this.y - margin;
-	DrawStyledText(gr, this.header_text(), panel.fonts.title, white, this.x, y, this.w, TM, DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
+lastfm_bio.paint = function (gr) {
+	var y = images.properties.layout.value == 0 ? margin : this.y - margin;
+	gr.WriteText2(this.header_text(), panel.fonts.title, white, this.x, y, this.w, TM, DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
 
-	if (this.text_layout) {
+	if (lastfm.api_key.empty()) {
+		gr.WriteTextSimple('Use the right click menu to set your own Last.fm API key.', panel.fonts.normal, white, this.x, this.y + margin, this.w, this.ha);
+	} else if (this.text_layout) {
 		gr.WriteTextLayout(this.text_layout, white, this.x, this.y + margin, this.w, this.ha, this.offset);
 		this.up_btn.paint(gr, white);
 		this.down_btn.paint(gr, white);
 	}
-}
-
-thumbs.image_containsxXY = function (x, y) {
-	return this.images.length && this.containsXY(x, y);
-}
-
-thumbs.move = function (x, y) {
-	this.mx = x;
-	this.my = y;
-	return this.containsXY(x, y);
-}
-
-thumbs.paint = function (gr) {
-	_drawImage(gr, this.blur_img, 0, 0, panel.w, panel.h, image.crop_top);
-	_drawOverlay(gr, 0, 0, panel.w, panel.h, 180);
-
-	if (this.images.length) {
-		this.image_xywh = _drawImage(gr, thumbs.images[thumbs.image], this.x, this.y, this.w, this.h, this.properties.aspect.value);
-	} else {
-		this.image_xywh = [];
-	}
-}
-
-thumbs.wheel = function (s) {
-	if (this.containsXY(this.mx, this.my)) {
-		if (this.images.length > 1) {
-			this.image -= s;
-			if (this.image < 0) {
-				this.image = this.images.length - 1;
-			}
-			if (this.image >= this.images.length) {
-				this.image = 0;
-			}
-			window.Repaint();
-		}
-		return true;
-	}
-	return false;
 }
 
 panel.item_focus_change();
@@ -75,7 +39,7 @@ function on_colours_changed() {
 }
 
 function on_download_file_done(path, success, error_text) {
-	text.download_file_done(path, success, error_text);
+	lastfm_bio.download_file_done(path, success, error_text);
 }
 
 function on_font_changed() {
@@ -84,76 +48,84 @@ function on_font_changed() {
 }
 
 function on_http_request_done(task_id, success, response_text) {
-	thumbs.http_request_done(task_id, success, response_text);
-	text.http_request_done(task_id, success, response_text);
+	images.http_request_done(task_id, success, response_text);
+	lastfm_bio.http_request_done(task_id, success, response_text);
 }
 
 function on_item_focus_change() {
-	if (panel.selection.value == 0 && fb.IsPlaying) return;
+	if (panel.prefer_playing())
+		return;
+
 	panel.item_focus_change();
 }
 
 function on_key_down(k) {
-	text.key_down(k);
-	thumbs.key_down(k);
+	lastfm_bio.key_down(k);
+	images.key_down(k);
 }
 
 function on_metadb_changed(handles, fromhook) {
-	if (fromhook) return;
-	text.metadb_changed();
-	thumbs.metadb_changed();
+	if (fromhook)
+		return;
+
+	lastfm_bio.metadb_changed();
+	images.metadb_changed();
 }
 
 function on_mouse_lbtn_up(x, y) {
-	text.lbtn_up(x, y);
+	lastfm_bio.lbtn_up(x, y);
 }
 
 function on_mouse_move(x, y) {
-	text.move(x, y);
-	thumbs.move(x, y);
+	lastfm_bio.move(x, y);
+	images.move(x, y);
 }
 
 function on_mouse_lbtn_dblclk(x, y) {
-	thumbs.lbtn_dblclk(x, y);
+	images.lbtn_dblclk(x, y);
 }
 
 function on_mouse_rbtn_up(x, y) {
-	if (text.containsXY(x, y)) {
-		return panel.rbtn_up(x, y, text);
-	}
-	return panel.rbtn_up(x, y, thumbs);
+	if (lastfm_bio.containsXY(x, y))
+		return panel.rbtn_up(x, y, lastfm_bio);
+
+	return panel.rbtn_up(x, y, images);
 }
 
 function on_mouse_wheel(s) {
 	if (utils.IsKeyPressed(VK_CONTROL)) {
-		var value = _clamp(thumbs.properties.ratio.value - (s * 0.05), 0.2, 0.8);
-		if (value != thumbs.properties.ratio.value) {
-			thumbs.properties.ratio.value = value;
+		var value = _clamp(images.properties.ratio.value - (s * 0.05), 0.2, 0.8);
+		if (value != images.properties.ratio.value) {
+			images.properties.ratio.value = value;
 			on_size();
 			window.Repaint();
 		}
 	} else {
-		thumbs.wheel(s);
-		text.wheel(s);
+		images.wheel(s);
+		lastfm_bio.wheel(s);
 	}
+}
+
+function on_notify_data(name, data) {
+	lastfm.notify_data(name, data);
 }
 
 function on_paint(gr) {
 	panel.paint(gr);
-	thumbs.paint(gr);
-	text.paint(gr);
+	images.paint(gr);
+	lastfm_bio.paint(gr);
 }
 
 function on_playback_dynamic_info_track(type) {
 	if (type == 0) {
-		text.metadb_changed();
-		thumbs.playback_new_track();
+		lastfm_bio.metadb_changed();
+		images.playback_new_track();
 	}
 }
 
 function on_playback_new_track() {
 	panel.item_focus_change();
-	thumbs.playback_new_track();
+	images.playback_new_track();
 }
 
 function on_playback_stop(reason) {
@@ -163,7 +135,7 @@ function on_playback_stop(reason) {
 }
 
 function on_playback_time() {
-	thumbs.playback_time();
+	images.playback_time();
 }
 
 function on_playlist_switch() {
@@ -173,29 +145,29 @@ function on_playlist_switch() {
 function on_size() {
 	panel.size();
 
-	thumbs.x = margin;
-	thumbs.y = margin;
+	images.x = margin;
+	images.y = margin;
 
-	switch (thumbs.properties.layout.value) {
+	switch (images.properties.layout.value) {
 	case 0: // Image left, Text right
-		thumbs.w = panel.w * thumbs.properties.ratio.value;
-		thumbs.h = panel.h - (margin * 2);
+		images.w = panel.w * images.properties.ratio.value;
+		images.h = panel.h - (margin * 2);
 
-		text.x = thumbs.w + (margin * 2);
-		text.y = margin * 2
-		text.w = panel.w - thumbs.w - (margin * 3);
-		text.h = panel.h - text.y;
+		lastfm_bio.x = images.w + (margin * 2);
+		lastfm_bio.y = margin * 2
+		lastfm_bio.w = panel.w - images.w - (margin * 3);
+		lastfm_bio.h = panel.h - lastfm_bio.y;
 		break;
 	case 1: // Image top, text bottom
-		thumbs.w = panel.w - (margin * 2);
-		thumbs.h = panel.h * thumbs.properties.ratio.value;
+		images.w = panel.w - (margin * 2);
+		images.h = panel.h * images.properties.ratio.value;
 
-		text.x = margin;
-		text.y = thumbs.h + (margin * 3);
-		text.w = panel.w - (margin * 2);
-		text.h = panel.h - thumbs.h - (margin * 3);
+		lastfm_bio.x = margin;
+		lastfm_bio.y = images.h + (margin * 3);
+		lastfm_bio.w = panel.w - (margin * 2);
+		lastfm_bio.h = panel.h - images.h - (margin * 3);
 		break;
 	}
 
-	text.size();
+	lastfm_bio.size();
 }

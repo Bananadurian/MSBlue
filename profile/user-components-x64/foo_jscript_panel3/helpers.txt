@@ -79,53 +79,12 @@ function DetermineTextColour(background) {
 	return RGB(255, 255, 255);
 }
 
-// text variable can contain $rgb code. Used by JS Playlist, can be reused elsewhere
-function DrawColouredText(gr, text, font, default_colour, x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity) {
-	if (!text) return;
-
-	if (typeof text_alignment != 'number') text_alignment = DWRITE_TEXT_ALIGNMENT_LEADING;
-	if (typeof paragraph_alignment != 'number') paragraph_alignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
-	if (typeof word_wrapping != 'number') word_wrapping = DWRITE_WORD_WRAPPING_NO_WRAP;
-	if (typeof trimming_granularity != 'number') trimming_granularity = DWRITE_TRIMMING_GRANULARITY_NONE;
-
-	// no $rgb code, WriteText with default_colour and bail
-	if (text.indexOf(chars.etx) == -1) {
-		gr.WriteText(text, font, default_colour, x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity);
-		return;
-	}
-
-	var colours = GetColourStyles(text, default_colour);
-	gr.WriteText(StripCodes(text), font, JSON.stringify(colours), x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity);
-}
-
-// text variable can contain $rgb and $font code
-function DrawStyledText(gr, text, default_font, default_colour, x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity) {
-	if (!text) return;
-
-	if (typeof text_alignment != 'number') text_alignment = DWRITE_TEXT_ALIGNMENT_LEADING;
-	if (typeof paragraph_alignment != 'number') paragraph_alignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
-	if (typeof word_wrapping != 'number') word_wrapping = DWRITE_WORD_WRAPPING_NO_WRAP;
-	if (typeof trimming_granularity != 'number') trimming_granularity = DWRITE_TRIMMING_GRANULARITY_NONE;
-
-	// no $rgb code or $font code, WriteText with defaults and bail
-	if (text.indexOf(chars.etx) == -1 && text.indexOf(chars.bel) == -1) {
-		gr.WriteText(text, default_font, default_colour, x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity);
-		return;
-	}
-
-	// gr.WriteText accepts an empty string but GetFontStyles needs a valid font
-	if (default_font.empty()) {
-		default_font = CreateFontString('Segoe UI', 16);
-	}
-
-	var fonts = GetFontStyles(text, JSON.parse(default_font));
-	var colours = GetColourStyles(text, default_colour);
-	gr.WriteText(StripCodes(text), JSON.stringify(fonts), JSON.stringify(colours), x, y, w, h, text_alignment, paragraph_alignment, word_wrapping, trimming_granularity);
-}
-
 function StripCode(text, chr) {
-	if (!text) return '';
-	if (text.indexOf(chr) == -1) return text;
+	if (!text)
+		return '';
+
+	if (text.indexOf(chr) == -1)
+		return text;
 
 	var arr = text.split(chr);
 	var str = text.indexOf(chr) == 0 ? '' : arr[0];
@@ -142,93 +101,6 @@ function StripCodes(text) {
 	return text;
 }
 
-// $rgb parser
-// generates array for gr.WriteText / gr.WriteTextLayout
-function GetColourStyles(text, default_colour) {
-	var styles = [{
-		Start : 0,
-		Length : UINT_MAX,
-		Colour : default_colour,
-	}];
-
-	if (text.indexOf(chars.etx) == -1) return styles;
-	text = StripCode(text, chars.bel); // Discard $font code if present
-
-	var arr = text.split(chars.etx);
-	var start = text.indexOf(chars.etx) > 0 ? arr[0].length : 0;
-	arr.shift();
-	for (var i = 0; i < arr.length; i += 2) {
-		var len = arr[i + 1].length;
-		var style = {
-			Start : start,
-			Length : len,
-		}
-
-		if (arr[i].length) {
-			// $rgb = BBGGRR
-			var b = Number('0x' + arr[i].substr(0, 2));
-			var g = Number('0x' + arr[i].substr(2, 2));
-			var r = Number('0x' + arr[i].substr(4, 2));
-			style.Colour = RGB(r, g, b);
-		} else {
-			// $rgb() with no values, reset to default
-			style.Colour = default_colour;
-		}
-
-		styles.push(style);
-		start += len;
-	}
-	return styles;
-}
-
-// $font parser for component version 3.1.9 and later
-// generates array for gr.WriteText / utils.CreateTextLayout2
-function GetFontStyles(text, font_obj) {
-	var styles = [{
-		Start : 0,
-		Length : UINT_MAX,
-		Name : font_obj.Name,
-		Size : font_obj.Size,
-		Weight : font_obj.Weight,
-		Style : typeof font_obj.Style == 'number' ? font_obj.Style : 0,
-	}];
-
-	if (text.indexOf(chars.bel) == -1) return styles;
-	text = StripCode(text, chars.etx); // Discard $rgb code if present
-
-	var arr = text.split(chars.bel);
-	var start = text.indexOf(chars.bel) > 0 ? arr[0].length : 0;
-	arr.shift();
-	for (var i = 0; i < arr.length; i += 2) {
-		var parts = arr[i].length ? arr[i].split(chars.tab) : [];
-		var len = arr[i + 1].length;
-		var style = {
-			Start : start,
-			Length : len,
-		};
-
-		if (parts.length) {
-			// Extract values from $font function
-			style.Name = utils.CheckFont(parts[0]) ? parts[0] : font_obj.Name;
-			style.Size = Math.round(Number(parts[1] * DPI / 72));
-			style.Weight = Number(parts[2]);
-			style.Style = Number(parts[3]);
-			style.Underline = Number(parts[4]) == 1;
-			style.Strikethrough = Number(parts[5]) == 1;
-		} else {
-			// $font() with no values, reset to default
-			style.Name = font_obj.Name;
-			style.Size = font_obj.Size;
-			style.Weight = font_obj.Weight;
-			if (typeof font_obj.Style == 'number') style.Style = font_obj.Style;
-		}
-
-		styles.push(style);
-		start += len;
-	}
-	return styles
-}
-
 // fixed line width of 1px
 function DrawRectangle(gr, x, y, w, h, colour) {
 	gr.DrawRectangle(Math.floor(x) + 0.5, Math.floor(y) + 0.5, w, h, 1, colour);
@@ -238,8 +110,12 @@ function DrawRectangle(gr, x, y, w, h, colour) {
 function FillGradientRectangle(gr, x, y, w, h, direction, colour1, colour2) {
 	var stops = [[0, colour1], [1, colour2]];
 	var brush = {Start : [0, 0], Stops: stops};
-	if (direction == 0) brush.End = [0, h];
-	else brush.End = [w, 0];
+
+	if (direction == 0)
+		brush.End = [0, h];
+	else
+		brush.End = [w, 0];
+
 	gr.FillRectangle(x, y, w, h, JSON.stringify(brush));
 }
 
@@ -249,13 +125,21 @@ function EnableMenuIf(condition) {
 
 function CheckMenuIf(condition) {
 	var flags = MF_STRING;
-	if (condition) flags |= MF_CHECKED;
+
+	if (condition) {
+		flags |= MF_CHECKED;
+	}
+
 	return flags;
 }
 
 function GetMenuFlags(enabled, checked) {
 	var flags = enabled ? MF_STRING : MF_GRAYED;
-	if (checked) flags |= MF_CHECKED;
+
+	if (checked) {
+		flags |= MF_CHECKED;
+	}
+
 	return flags;
 }
 
@@ -270,6 +154,7 @@ function CreateFontString(name, size, bold) {
 
 function GetNowPlayingColours() {
 	var metadb = fb.GetNowPlaying();
+
 	if (metadb) {
 		var img = metadb.GetAlbumArt(AlbumArtId.front, false); // 2nd arg is want_stub - we don't
 		if (img) {
@@ -371,6 +256,7 @@ var chars = {
 	random : '\ue9ce',
 	album : '\ue93c',
 	folder : '\ued25',
+	autoplaylist : '\uea69',
 // Ignore these, they are special chars for $rgb and $font parsing
 	etx : String.fromCharCode(3),
 	bel : String.fromCharCode(7),
@@ -559,6 +445,12 @@ var AlbumArtId = {
 	artist : 4,
 };
 
+var AlbumArtType = {
+	embedded : 0,
+	default : 1,
+	stub : 2,
+};
+
 var ColourTypeCUI = {
 	text : 0,
 	selection_text : 1,
@@ -654,153 +546,26 @@ var ImageEffect = {
 	sepia : 2,
 };
 
-var colours = {
-	AliceBlue : 0xFFF0F8FF,
-	AntiqueWhite : 0xFFFAEBD7,
-	Aqua : 0xFF00FFFF,
-	Aquamarine : 0xFF7FFFD4,
-	Azure : 0xFFF0FFFF,
-	Beige : 0xFFF5F5DC,
-	Bisque : 0xFFFFE4C4,
-	Black : 0xFF000000,
-	BlanchedAlmond : 0xFFFFEBCD,
-	Blue : 0xFF0000FF,
-	BlueViolet : 0xFF8A2BE2,
-	Brown : 0xFFA52A2A,
-	BurlyWood : 0xFFDEB887,
-	CadetBlue : 0xFF5F9EA0,
-	Chartreuse : 0xFF7FFF00,
-	Chocolate : 0xFFD2691E,
-	Coral : 0xFFFF7F50,
-	CornflowerBlue : 0xFF6495ED,
-	Cornsilk : 0xFFFFF8DC,
-	Crimson : 0xFFDC143C,
-	Cyan : 0xFF00FFFF,
-	DarkBlue : 0xFF00008B,
-	DarkCyan : 0xFF008B8B,
-	DarkGoldenrod : 0xFFB8860B,
-	DarkGray : 0xFFA9A9A9,
-	DarkGreen : 0xFF006400,
-	DarkKhaki : 0xFFBDB76B,
-	DarkMagenta : 0xFF8B008B,
-	DarkOliveGreen : 0xFF556B2F,
-	DarkOrange : 0xFFFF8C00,
-	DarkOrchid : 0xFF9932CC,
-	DarkRed : 0xFF8B0000,
-	DarkSalmon : 0xFFE9967A,
-	DarkSeaGreen : 0xFF8FBC8B,
-	DarkSlateBlue : 0xFF483D8B,
-	DarkSlateGray : 0xFF2F4F4F,
-	DarkTurquoise : 0xFF00CED1,
-	DarkViolet : 0xFF9400D3,
-	DeepPink : 0xFFFF1493,
-	DeepSkyBlue : 0xFF00BFFF,
-	DimGray : 0xFF696969,
-	DodgerBlue : 0xFF1E90FF,
-	Firebrick : 0xFFB22222,
-	FloralWhite : 0xFFFFFAF0,
-	ForestGreen : 0xFF228B22,
-	Fuchsia : 0xFFFF00FF,
-	Gainsboro : 0xFFDCDCDC,
-	GhostWhite : 0xFFF8F8FF,
-	Gold : 0xFFFFD700,
-	Goldenrod : 0xFFDAA520,
-	Gray : 0xFF808080,
-	Green : 0xFF008000,
-	GreenYellow : 0xFFADFF2F,
-	Honeydew : 0xFFF0FFF0,
-	HotPink : 0xFFFF69B4,
-	IndianRed : 0xFFCD5C5C,
-	Indigo : 0xFF4B0082,
-	Ivory : 0xFFFFFFF0,
-	Khaki : 0xFFF0E68C,
-	Lavender : 0xFFE6E6FA,
-	LavenderBlush : 0xFFFFF0F5,
-	LawnGreen : 0xFF7CFC00,
-	LemonChiffon : 0xFFFFFACD,
-	LightBlue : 0xFFADD8E6,
-	LightCoral : 0xFFF08080,
-	LightCyan : 0xFFE0FFFF,
-	LightGoldenrodYellow : 0xFFFAFAD2,
-	LightGray : 0xFFD3D3D3,
-	LightGreen : 0xFF90EE90,
-	LightPink : 0xFFFFB6C1,
-	LightSalmon : 0xFFFFA07A,
-	LightSeaGreen : 0xFF20B2AA,
-	LightSkyBlue : 0xFF87CEFA,
-	LightSlateGray : 0xFF778899,
-	LightSteelBlue : 0xFFB0C4DE,
-	LightYellow : 0xFFFFFFE0,
-	Lime : 0xFF00FF00,
-	LimeGreen : 0xFF32CD32,
-	Linen : 0xFFFAF0E6,
-	Magenta : 0xFFFF00FF,
-	Maroon : 0xFF800000,
-	MediumAquamarine : 0xFF66CDAA,
-	MediumBlue : 0xFF0000CD,
-	MediumOrchid : 0xFFBA55D3,
-	MediumPurple : 0xFF9370DB,
-	MediumSeaGreen : 0xFF3CB371,
-	MediumSlateBlue : 0xFF7B68EE,
-	MediumSpringGreen : 0xFF00FA9A,
-	MediumTurquoise : 0xFF48D1CC,
-	MediumVioletRed : 0xFFC71585,
-	MidnightBlue : 0xFF191970,
-	MintCream : 0xFFF5FFFA,
-	MistyRose : 0xFFFFE4E1,
-	Moccasin : 0xFFFFE4B5,
-	NavajoWhite : 0xFFFFDEAD,
-	Navy : 0xFF000080,
-	OldLace : 0xFFFDF5E6,
-	Olive : 0xFF808000,
-	OliveDrab : 0xFF6B8E23,
-	Orange : 0xFFFFA500,
-	OrangeRed : 0xFFFF4500,
-	Orchid : 0xFFDA70D6,
-	PaleGoldenrod : 0xFFEEE8AA,
-	PaleGreen : 0xFF98FB98,
-	PaleTurquoise : 0xFFAFEEEE,
-	PaleVioletRed : 0xFFDB7093,
-	PapayaWhip : 0xFFFFEFD5,
-	PeachPuff : 0xFFFFDAB9,
-	Peru : 0xFFCD853F,
-	Pink : 0xFFFFC0CB,
-	Plum : 0xFFDDA0DD,
-	PowderBlue : 0xFFB0E0E6,
-	Purple : 0xFF800080,
-	Red : 0xFFFF0000,
-	RosyBrown : 0xFFBC8F8F,
-	RoyalBlue : 0xFF4169E1,
-	SaddleBrown : 0xFF8B4513,
-	Salmon : 0xFFFA8072,
-	SandyBrown : 0xFFF4A460,
-	SeaGreen : 0xFF2E8B57,
-	SeaShell : 0xFFFFF5EE,
-	Sienna : 0xFFA0522D,
-	Silver : 0xFFC0C0C0,
-	SkyBlue : 0xFF87CEEB,
-	SlateBlue : 0xFF6A5ACD,
-	SlateGray : 0xFF708090,
-	Snow : 0xFFFFFAFA,
-	SpringGreen : 0xFF00FF7F,
-	SteelBlue : 0xFF4682B4,
-	Tan : 0xFFD2B48C,
-	Teal : 0xFF008080,
-	Thistle : 0xFFD8BFD8,
-	Tomato : 0xFFFF6347,
-	Transparent : 0x00FFFFFF,
-	Turquoise : 0xFF40E0D0,
-	Violet : 0xFFEE82EE,
-	Wheat : 0xFFF5DEB3,
-	White : 0xFFFFFFFF,
-	WhiteSmoke : 0xFFF5F5F5,
-	Yellow : 0xFFFFFF00,
-	YellowGreen : 0xFF9ACD32,
-};
+Number.prototype.calc_width = function (font_obj) {
+	return utils.CalcTextWidth(this.toString(), font_obj.Name, font_obj.Size, font_obj.Weight || 400);
+}
+
+Number.prototype.calc_width2 = function (font) {
+	return utils.CalcTextWidth2(this.toString(), font);
+}
 
 String.prototype.calc_width = function (font_obj) {
-	if (this.empty()) return 0;
+	if (this.empty())
+		return 0;
+
 	return utils.CalcTextWidth(this, font_obj.Name, font_obj.Size, font_obj.Weight || 400);
+}
+
+String.prototype.calc_width2 = function (font) {
+	if (this.empty())
+		return 0;
+
+	return utils.CalcTextWidth2(this, font);
 }
 
 String.prototype.empty = function () {
@@ -812,8 +577,4 @@ String.prototype.repeat = function (num) {
 		return new Array(Math.round(num) + 1).join(this);
 	}
 	return "";
-}
-
-Number.prototype.calc_width = function (font_obj) {
-	return utils.CalcTextWidth(this.toString(), font_obj.Name, font_obj.Size, font_obj.Weight || 400);
 }

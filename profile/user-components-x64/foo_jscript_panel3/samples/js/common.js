@@ -6,8 +6,10 @@ function _artistFolder(artist) {
 
 function _button(x, y, w, h, normal, hover, fn, tiptext) {
 	this.paint = function (gr) {
-		if (this.current) {
-			gr.WriteText(this.current.char, this.font, this.current.colour, this.x, this.y, this.w, this.h, 2, 2);
+		if (this.current.char) {
+			gr.WriteTextSimple(this.current.char, this.font, this.current.colour, this.x, this.y, this.w, this.h, 2, 2);
+		} else if (this.current.img) {
+			_drawImage(gr, this.current.img, this.x, this.y, this.w, this.h, image.full);
 		}
 	}
 
@@ -28,6 +30,7 @@ function _button(x, y, w, h, normal, hover, fn, tiptext) {
 		} else {
 			this.current = this.normal;
 		}
+
 		window.RepaintRect(this.x, this.y, this.w, this.h);
 	}
 
@@ -40,7 +43,10 @@ function _button(x, y, w, h, normal, hover, fn, tiptext) {
 	this.normal = normal;
 	this.hover = hover || normal;
 	this.current = normal;
-	this.font = JSON.stringify({Name:'Segoe Fluent Icons',Size:this.h - _scale(10)});
+
+	if (this.current.char) {
+		this.font = JSON.stringify({Name:'Segoe Fluent Icons',Size:this.h - _scale(10)});
+	}
 }
 
 function _buttons() {
@@ -55,17 +61,21 @@ function _buttons() {
 				temp_btn = i;
 			}
 		});
+
 		if (this.btn == temp_btn) {
 			return this.btn;
 		}
+
 		if (this.btn) {
 			this.buttons[this.btn].cs('normal');
 		}
+
 		if (temp_btn) {
 			this.buttons[temp_btn].cs('hover');
 		} else {
 			_tt('');
 		}
+
 		this.btn = temp_btn;
 		return this.btn;
 	}
@@ -75,6 +85,7 @@ function _buttons() {
 			_tt('');
 			this.buttons[this.btn].cs('normal');
 		}
+
 		this.btn = null;
 	}
 
@@ -83,6 +94,7 @@ function _buttons() {
 			this.buttons[this.btn].lbtn_up(x, y, mask);
 			return true;
 		}
+
 		return false;
 	}
 
@@ -97,9 +109,12 @@ function _buttons() {
 }
 
 function _clamp(value, min, max) {
-	if (value < min) return min;
-	if (value > max) return max;
-	return value;
+	if (value < min)
+		return min;
+	else if (value > max)
+		return max;
+	else
+		return value;
 }
 
 function _dispose() {
@@ -110,10 +125,10 @@ function _dispose() {
 	});
 }
 
-function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity) {
-	if (!img) {
+function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity, border) {
+	if (!img)
 		return [];
-	}
+
 	switch (true) {
 	case (dst_w == dst_h && img.Width == img.Height) || (dst_w == img.Width && dst_h == img.Height):
 	case mode == image.stretch:
@@ -132,20 +147,27 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity) {
 			var src_h = img.Height;
 			var src_x = Math.round((img.Width - src_w) / 2);
 		}
+
 		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, src_x + 3, src_y + 3, src_w - 6, src_h - 6, opacity || 1);
 		break;
-	case mode == image.centre:
+	case mode == image.full:
+	case mode == image.full_top_align:
 	default:
 		var s = Math.min(dst_w / img.Width, dst_h / img.Height);
 		var w = Math.floor(img.Width * s);
 		var h = Math.floor(img.Height * s);
 		dst_x += Math.round((dst_w - w) / 2);
-		dst_y += Math.round((dst_h - h) / 2);
+		dst_y = mode == image.full_top_align ? dst_y : dst_y + Math.round((dst_h - h) / 2);
 		dst_w = w;
 		dst_h = h;
 		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
 		break;
 	}
+
+	if (border) {
+		DrawRectangle(gr, dst_x, dst_y, dst_w, dst_h, border);
+	}
+
 	return [dst_x, dst_y, dst_w, dst_h];
 }
 
@@ -160,7 +182,9 @@ function _explorer(file) {
 }
 
 function _fbEscape(value) {
-	if (typeof value != 'string') return '';
+	if (typeof value != 'string')
+		return '';
+
 	return value.replace(/'/g, "''").replace(/[\(\)\[\],$]/g, "'$&'");
 }
 
@@ -207,6 +231,7 @@ function _getFiles(folder, exts) {
 	if (!exts) {
 		return files;
 	}
+
 	return _.filter(files, function (item) {
 		var ext = _getExt(item);
 		return _.includes(exts, ext);
@@ -217,6 +242,7 @@ function _help(x, y, flags) {
 	var menu = window.CreatePopupMenu();
 	_.forEach(ha_links, function (item, i) {
 		menu.AppendMenuItem(MF_STRING, i + 100, item[0]);
+
 		if (i == 1) {
 			menu.AppendMenuSeparator();
 		}
@@ -338,17 +364,17 @@ function _q(value) {
 }
 
 function _save(file, value) {
-	if (utils.WriteTextFile(file, value)) {
+	if (utils.WriteTextFile(file, value))
 		return true;
-	}
-	console.log('Error saving to ' + file);
+
+	console.log(N, 'Error saving to ' + file);
 	return false;
 }
 
 function _sb(ch, x, y, w, h, v, fn) {
 	this.paint = function (gr, colour) {
 		if (this.v()) {
-			gr.WriteText(this.ch, this.font, colour, this.x, this.y, this.w, this.h, 2, 2);
+			gr.WriteTextSimple(this.ch, this.font, colour, this.x, this.y, this.w, this.h, 2, 2);
 		}
 	}
 
@@ -357,23 +383,22 @@ function _sb(ch, x, y, w, h, v, fn) {
 	}
 
 	this.move = function (x, y) {
-		if (this.containsXY(x, y)) {
-			window.SetCursor(IDC_HAND);
-			return true;
-		}
+		if (!this.containsXY(x, y))
+			return false;
 
-		//window.SetCursor(IDC_ARROW);
-		return false;
+		window.SetCursor(IDC_HAND);
+		return true;
 	}
 
 	this.lbtn_up = function (x, y) {
-		if (this.containsXY(x, y)) {
-			if (this.fn) {
-				this.fn(x, y);
-			}
-			return true;
+		if (!this.containsXY(x, y))
+			return false;
+
+		if (this.fn) {
+			this.fn(x, y);
 		}
-		return false;
+
+		return true;
 	}
 
 	this.ch = ch;
@@ -391,7 +416,9 @@ function _scale(size) {
 }
 
 function _stringToArray(str, sep) {
-	if (typeof str != 'string' || typeof sep != 'string') return [];
+	if (typeof str != 'string' || typeof sep != 'string')
+		return [];
+
 	return str.split(sep).map(function (item) { return item.trim(); }).filter(function (item) { return !item.empty(); });
 }
 
@@ -417,11 +444,12 @@ function _tt(value) {
 
 var doc = new ActiveXObject('htmlfile');
 
+var CRLF = '\r\n';
 var ONE_DAY = 86400;
 var DEFAULT_ARTIST = '$meta(artist,0)';
 var N = window.Name + ':';
 var LM = _scale(5);
-var TM = _scale(17);
+var TM = _scale(22);
 
 var tooltip = window.CreateTooltip('Segoe UI', _scale(12));
 tooltip.SetMaxWidth(800);
@@ -437,7 +465,8 @@ var image = {
 	crop : 0,
 	crop_top : 1,
 	stretch : 2,
-	centre : 3
+	full : 3,
+	full_top_align : 4,
 };
 
 var ha_links = [

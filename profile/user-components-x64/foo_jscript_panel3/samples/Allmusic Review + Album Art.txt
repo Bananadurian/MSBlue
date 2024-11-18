@@ -1,27 +1,27 @@
 // ==PREPROCESSOR==
 // @name "Allmusic Review + Album Art"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // @import "%fb2k_component_path%samples\js\albumart.js"
-// @import "%fb2k_component_path%samples\js\text.js"
+// @import "%fb2k_component_path%samples\js\allmusic.js"
 // ==/PREPROCESSOR==
 
 var margin = _scale(12);
 
 var panel = new _panel();
-var text = new _text('allmusic', 0, 0, 0, 0);
+var allmusic = new _allmusic(0, 0, 0, 0);
 var albumart = new _albumart(margin, margin, 0, 0);
 var white = RGB(255, 255, 255);
 
-text.paint = function (gr) {
+allmusic.paint = function (gr) {
 	_drawImage(gr, albumart.blur_img, 0, 0, panel.w, panel.h, image.crop);
 	_drawOverlay(gr, 0, 0, panel.w, panel.h, 180);
 
 	var y = albumart.properties.layout.value == 0 ? margin : this.y - margin;
-	gr.WriteText(this.header_text(), panel.fonts.title, white, this.x, y, this.w, margin + _scale(4), DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
+	gr.WriteTextSimple(this.header_text(), panel.fonts.title, white, this.x, y, this.w, TM, DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
 
 	if (this.text_layout) {
 		gr.WriteTextLayout(this.text_layout, white, this.x, this.y + margin, this.w, this.ha, this.offset);
@@ -43,31 +43,35 @@ function on_font_changed() {
 }
 
 function on_http_request_done(task_id, success, response_text) {
-	text.http_request_done(task_id, success, response_text);
+	allmusic.http_request_done(task_id, success, response_text);
 }
 
 function on_item_focus_change() {
-	if (panel.selection.value == 0 && fb.IsPlaying) return;
+	if (panel.prefer_playing())
+		return;
+
 	panel.item_focus_change();
 }
 
 function on_key_down(k) {
-	text.key_down(k);
+	allmusic.key_down(k);
 	albumart.key_down(k);
 }
 
 function on_metadb_changed(handles, fromhook) {
-	if (fromhook) return;
-	text.metadb_changed();
+	if (fromhook)
+		return;
+
+	allmusic.metadb_changed();
 	albumart.metadb_changed();
 }
 
 function on_mouse_lbtn_up(x, y) {
-	text.lbtn_up(x, y);
+	allmusic.lbtn_up(x, y);
 }
 
 function on_mouse_move(x, y) {
-	text.move(x, y);
+	allmusic.move(x, y);
 	albumart.move(x, y);
 }
 
@@ -76,9 +80,9 @@ function on_mouse_lbtn_dblclk(x, y) {
 }
 
 function on_mouse_rbtn_up(x, y) {
-	if (text.containsXY(x, y)) {
-		return panel.rbtn_up(x, y, text);
-	}
+	if (allmusic.containsXY(x, y))
+		return panel.rbtn_up(x, y, allmusic);
+
 	return panel.rbtn_up(x, y, albumart);
 }
 
@@ -92,13 +96,13 @@ function on_mouse_wheel(s) {
 		}
 	} else {
 		albumart.wheel(s);
-		text.wheel(s);
+		allmusic.wheel(s);
 	}
 }
 
 function on_paint(gr) {
 	panel.paint(gr);
-	text.paint(gr);
+	allmusic.paint(gr);
 	albumart.paint(gr);
 }
 
@@ -107,7 +111,7 @@ function on_playback_dynamic_info_track(type) {
 		// stream metadata doesn't contain album tags for
 		// lookups but we can update the artist in the title section
 		window.Repaint();
-	} else if (type == 1) {
+	} else {
 		albumart.metadb_changed();
 	}
 }
@@ -134,21 +138,21 @@ function on_size() {
 		albumart.w = panel.w * albumart.properties.ratio.value;
 		albumart.h = panel.h - (margin * 2);
 
-		text.x = albumart.w + (margin * 2);
-		text.y = margin * 2
-		text.w = panel.w - albumart.w - (margin * 3);
-		text.h = panel.h - text.y;
+		allmusic.x = albumart.w + (margin * 2);
+		allmusic.y = margin * 2
+		allmusic.w = panel.w - albumart.w - (margin * 3);
+		allmusic.h = panel.h - allmusic.y;
 		break;
 	case 1: // Image top, Text bottom
 		albumart.w = panel.w - (margin * 2);
 		albumart.h = panel.h * albumart.properties.ratio.value;
 
-		text.x = margin;
-		text.y = albumart.h + (margin * 3);
-		text.w = panel.w - (margin * 2);
-		text.h = panel.h - albumart.h - (margin * 3);
+		allmusic.x = margin;
+		allmusic.y = albumart.h + (margin * 3);
+		allmusic.w = panel.w - (margin * 2);
+		allmusic.h = panel.h - albumart.h - (margin * 3);
 		break;
 	}
 
-	text.size();
+	allmusic.size();
 }

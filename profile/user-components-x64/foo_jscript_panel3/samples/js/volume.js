@@ -5,35 +5,42 @@ function _volume(x, y, w, h) {
 	}
 
 	this.lbtn_down = function (x, y) {
-		if (this.containsXY(x, y)) {
-			this.drag = true;
-			return true;
-		}
-		return false;
+		if (!this.containsXY(x, y))
+			return false;
+
+		this.drag = true;
+		return true;
 	}
 
 	this.lbtn_up = function (x, y) {
-		if (this.containsXY(x, y)) {
-			if (this.drag) {
-				this.drag = false;
-				fb.Volume = this.drag_vol;
-			}
-			return true;
+		if (!this.containsXY(x, y))
+			return false;
+
+		if (this.drag) {
+			this.drag = false;
+			fb.Volume = this.drag_vol;
 		}
-		return false;
+
+		return true;
 	}
 
 	this.move = function (x, y) {
 		this.mx = x;
 		this.my = y;
+
 		if (this.containsXY(x, y)) {
-			x -= this.x;
-			var pos = x < 0 ? 0 : x > this.w ? 1 : x / this.w;
-			this.drag_vol = pos2vol(pos);
-			_tt(this.drag_vol.toFixed(2) + ' dB');
-			if (this.drag) {
-				fb.Volume = this.drag_vol;
+			if (fb.CustomVolume == -1) {
+				x -= this.x;
+				var pos = x < 0 ? 0 : x > this.w ? 1 : x / this.w;
+				this.drag_vol = pos2vol(pos);
+				_tt(this.drag_vol.toFixed(2) + ' dB');
+				if (this.drag) {
+					fb.Volume = this.drag_vol;
+				}
+			} else {
+				_tt('The current output device does not support a volume slider');
 			}
+
 			this.hover = true;
 			return true;
 		}
@@ -41,6 +48,7 @@ function _volume(x, y, w, h) {
 		if (this.hover) {
 			_tt('');
 		}
+
 		this.hover = false;
 		this.drag = false;
 		return false;
@@ -55,16 +63,16 @@ function _volume(x, y, w, h) {
 	}
 
 	this.wheel = function (s) {
-		if (this.containsXY(this.mx, this.my)) {
-			if (s == 1) {
-				fb.VolumeUp();
-			} else {
-				fb.VolumeDown();
-			}
-			_tt('');
-			return true;
+		if (!this.containsXY(this.mx, this.my))
+			return false;
+
+		if (s == 1) {
+			fb.VolumeUp();
+		} else {
+			fb.VolumeDown();
 		}
-		return false;
+
+		return true;
 	}
 
 	this.x = x;

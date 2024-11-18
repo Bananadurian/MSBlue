@@ -1,8 +1,8 @@
 // ==PREPROCESSOR==
 // @name "Rating"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // @import "%fb2k_component_path%samples\js\rating.js"
@@ -19,7 +19,9 @@ function on_colours_changed() {
 }
 
 function on_item_focus_change() {
-	if (panel.selection.value == 0 && fb.IsPlaying) return;
+	if (panel.prefer_playing())
+		return;
+
 	panel.item_focus_change();
 }
 

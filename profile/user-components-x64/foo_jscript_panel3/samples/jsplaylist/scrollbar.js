@@ -27,7 +27,9 @@ function PlaylistScrollBar() {
 	}
 
 	this.setCursorButton = function () {
-		if (!this.cursorWidth || !this.cursorHeight) return;
+		if (!this.cursorWidth || !this.cursorHeight)
+			return;
+
 		this.cursorImage_normal = utils.CreateImage(this.cursorWidth, this.cursorHeight);
 		var gb = this.cursorImage_normal.GetGraphics();
 
@@ -42,13 +44,13 @@ function PlaylistScrollBar() {
 		// normal scroll_up Image
 		this.upImage_normal = utils.CreateImage(this.w, this.w);
 		var gb = this.upImage_normal.GetGraphics();
-		gb.WriteText(chars.up, g_font_fluent_12.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.up, g_font_fluent_12, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.upImage_normal.ReleaseGraphics();
 
 		// normal scroll_down Image
 		this.downImage_normal = utils.CreateImage(this.w, this.w);
 		gb = this.downImage_normal.GetGraphics();
-		gb.WriteText(chars.down, g_font_fluent_12.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.down, g_font_fluent_12, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.downImage_normal.ReleaseGraphics();
 
 		this.buttons[cScrollBar.buttonType.up] = new button(this.upImage_normal, this.upImage_normal, this.upImage_normal);
@@ -278,13 +280,13 @@ function ScrollBar(parent, x, y, w, h, total_items, item_height) {
 		// normal scroll_up Image
 		this.upImage_normal = utils.CreateImage(this.w, this.w);
 		var gb = this.upImage_normal.GetGraphics();
-		gb.WriteText(chars.up, g_font_fluent_12.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.up, g_font_fluent_12, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.upImage_normal.ReleaseGraphics();
 
 		// normal scroll_down Image
 		this.downImage_normal = utils.CreateImage(this.w, this.w);
 		gb = this.downImage_normal.GetGraphics();
-		gb.WriteText(chars.down, g_font_fluent_12.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.down, g_font_fluent_12, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.downImage_normal.ReleaseGraphics();
 
 		this.buttons[cScrollBar.buttonType.up] = new button(this.upImage_normal, this.upImage_normal, this.upImage_normal);

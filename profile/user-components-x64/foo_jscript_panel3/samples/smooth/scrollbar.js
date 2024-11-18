@@ -27,32 +27,32 @@ function oScrollbar() {
 
 		this.upImage_normal = utils.CreateImage(this.w, this.w);
 		gb = this.upImage_normal.GetGraphics();
-		gb.WriteText(chars.up, g_font_fluent_20.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.up, g_font_fluent_20, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.upImage_normal.ReleaseGraphics();
 
 		this.upImage_hover = utils.CreateImage(this.w, this.w);
 		gb = this.upImage_hover.GetGraphics();
-		gb.WriteText(chars.up, g_font_fluent_20.str, g_colour_text & 0x99ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.up, g_font_fluent_20, g_colour_text & 0x99ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.upImage_hover.ReleaseGraphics();
 
 		this.upImage_down = utils.CreateImage(this.w, this.w);
 		gb = this.upImage_down.GetGraphics();
-		gb.WriteText(chars.up, g_font_fluent_20.str, g_colour_text, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.up, g_font_fluent_20, g_colour_text, 0, 0, this.w, this.w, 2, 2);
 		this.upImage_down.ReleaseGraphics();
 
 		this.downImage_normal = utils.CreateImage(this.w, this.w);
 		gb = this.downImage_normal.GetGraphics();
-		gb.WriteText(chars.down, g_font_fluent_20.str, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.down, g_font_fluent_20, g_colour_text & 0x55ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.downImage_normal.ReleaseGraphics();
 
 		this.downImage_hover = utils.CreateImage(this.w, this.w);
 		gb = this.downImage_hover.GetGraphics();
-		gb.WriteText(chars.down, g_font_fluent_20.str, g_colour_text & 0x99ffffff, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.down, g_font_fluent_20, g_colour_text & 0x99ffffff, 0, 0, this.w, this.w, 2, 2);
 		this.downImage_hover.ReleaseGraphics();
 
 		this.downImage_down = utils.CreateImage(this.w, this.w);
 		gb = this.downImage_down.GetGraphics();
-		gb.WriteText(chars.down, g_font_fluent_20.str, g_colour_text, 0, 0, this.w, this.w, 2, 2);
+		gb.WriteTextSimple(chars.down, g_font_fluent_20, g_colour_text, 0, 0, this.w, this.w, 2, 2);
 		this.downImage_down.ReleaseGraphics();
 
 		this.buttons[cScrollBar.ButtonType.up] = new button(this.upImage_normal, this.upImage_hover, this.upImage_down);
@@ -142,8 +142,6 @@ function oScrollbar() {
 		case "lbtn_down":
 			var tmp = this.buttons[cScrollBar.ButtonType.cursor].checkstate(event, x, y);
 			if (tmp == ButtonStates.down) {
-				this.cursorClickX = x;
-				this.cursorClickY = y;
 				this.cursorDrag = true;
 				this.cursorDragDelta = y - this.cursory;
 			}
@@ -154,8 +152,6 @@ function oScrollbar() {
 				this.setScrollFromCursorPos();
 				brw.repaint();
 			}
-			this.cursorClickX = 0;
-			this.cursorClickY = 0;
 			this.cursorDrag = false;
 			break;
 		case "move":
@@ -175,22 +171,10 @@ function oScrollbar() {
 		}
 	}
 
-	this._isHover = function (x, y) {
-		return (x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h);
-	}
-
-	this._isHoverArea = function (x, y) {
-		return (x >= this.x && x <= this.x + this.w && y >= this.areay && y <= this.areay + this.areah);
-	}
-
-	this._isHoverCursor = function (x, y) {
-		return (x >= this.x && x <= this.x + this.w && y >= this.cursory && y <= this.cursory + this.cursorh);
-	}
-
 	this.on_mouse = function (event, x, y, delta) {
-		this.isHover = this._isHover(x, y);
-		this.isHoverArea = this._isHoverArea(x, y);
-		this.isHoverCursor = this._isHoverCursor(x, y);
+		this.isHover = x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h;
+		this.isHoverArea = x >= this.x && x <= this.x + this.w && y >= this.areay && y <= this.areay + this.areah;
+		this.isHoverCursor = x >= this.x && x <= this.x + this.w && y >= this.cursory && y <= this.cursory + this.cursorh;
 		this.isHoverButtons = this.isHover && !this.isHoverCursor && !this.isHoverArea;
 		this.isHoverEmptyArea = this.isHoverArea && !this.isHoverCursor;
 

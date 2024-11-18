@@ -1,8 +1,8 @@
 // ==PREPROCESSOR==
 // @name "Text Display"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // @import "%fb2k_component_path%samples\js\albumart.js"
@@ -28,7 +28,9 @@ function on_font_changed() {
 }
 
 function on_item_focus_change() {
-	if (panel.selection.value == 0 && fb.IsPlaying) return;
+	if (panel.prefer_playing())
+		return;
+
 	panel.item_focus_change();
 }
 
@@ -36,20 +38,20 @@ function on_metadb_changed(handles, fromhook) {
 	if (!fromhook) {
 		albumart.metadb_changed();
 	}
+
 	text.metadb_changed();
 }
 
 function on_mouse_lbtn_dblclk(x, y) {
-	if (text.properties.layout.value > 0 && albumart.img && albumart.containsXY(x, y)) {
-		panel.metadb.ShowAlbumArtViewer();
+	if (text.properties.layout.value > 0) {
+		albumart.lbtn_dblclk(x, y);
 	}
 }
 
-function on_mouse_lbtn_up(x, y) {
-	text.lbtn_up(x, y);
-}
-
 function on_mouse_move(x, y) {
+	if (text.properties.layout.value > 0 && albumart.move(x, y))
+		return;
+
 	text.move(x, y);
 }
 
@@ -58,6 +60,9 @@ function on_mouse_rbtn_up(x, y) {
 }
 
 function on_mouse_wheel(s) {
+	if (albumart.wheel(s))
+		return;
+
 	text.wheel(s);
 }
 
@@ -67,8 +72,10 @@ function on_paint(gr) {
 }
 
 function on_playback_dynamic_info_track(type) {
-	if (type == 0) text.metadb_changed();
-	else if (type == 1 && (text.properties.albumart.enabled || text.properties.layout.value > 0)) albumart.metadb_changed();
+	if (type == 0)
+		text.metadb_changed();
+	else if (text.properties.albumart.enabled || text.properties.layout.value > 0)
+		albumart.metadb_changed();
 }
 
 function on_playback_new_track() {

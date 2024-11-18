@@ -1,20 +1,15 @@
-window.SetProperty('2K3.ARTREADER.ID', 0);
-
-function _text_display(x, y, w, h, buttons) {
+function _text_display(x, y, w, h, buttons_or_rating) {
 	this.clear_layout = function () {
 		if (this.text_layout) {
 			this.text_layout.Dispose();
 			this.text_layout = null;
 		}
+
 		this.text = '';
 	}
 
 	this.containsXY = function (x, y) {
 		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
-	}
-
-	this.lbtn_up = function (x, y) {
-		return this.containsXY(x, y);
 	}
 
 	this.metadb_changed = function () {
@@ -36,26 +31,35 @@ function _text_display(x, y, w, h, buttons) {
 
 	this.paint = function (gr) {
 		if (this.properties.albumart.enabled) {
-			_drawImage(gr, this.properties.albumart_blur.enabled ? albumart.blur_img : albumart.img, 0, 0, panel.w, panel.h, image.crop);
-			_drawOverlay(gr, 0, 0, panel.w, panel.h, 120);
+			if (this.properties.albumart_blur.enabled) {
+				_drawImage(gr, albumart.blur_img, 0, 0, panel.w, panel.h, image.crop);
+				_drawOverlay(gr, 0, 0, panel.w, panel.h, 120);
+			} else {
+				_drawImage(gr, albumart.img, 0, 0, panel.w, panel.h, image.crop);
+				_drawOverlay(gr, 0, 0, panel.w, panel.h, 160);
+			}
 		}
 
 		if (this.properties.layout.value > 0) {
-			_drawImage(gr, albumart.img, albumart.x, albumart.y, albumart.w, albumart.h, image.centre);
+			var border = this.properties.albumart.enabled ? RGB(150, 150, 150) : panel.colours.text;
+			_drawImage(gr, albumart.img, albumart.x, albumart.y, albumart.w, albumart.h, albumart.properties.aspect.value, 1.0, border);
 		}
 
-		if (!this.text_layout) return;
-		gr.WriteTextLayout(this.text_layout, this.colour_string, this.x, this.y, this.w, this.h, this.offset);
+		if (this.text_layout) {
+			gr.WriteTextLayout(this.text_layout, this.default_colour, this.x, this.y, this.w, this.h, this.offset);
+		}
 	}
 
 	this.rbtn_up = function (x, y) {
+		if (this.properties.layout.value > 0) {
+			panel.m.AppendMenuItem(MF_GRAYED, 0, 'Text display options');
+		}
+
 		panel.m.AppendMenuItem(MF_STRING, 1200, 'Custom text...');
 		panel.m.AppendMenuItem(CheckMenuIf(this.properties.per_second.enabled), 1201, 'Per-second updates');
 		panel.m.AppendMenuSeparator();
-		panel.m.AppendMenuItem(MF_STRING, 1202, 'Custom colours and fonts explained');
-		panel.m.AppendMenuSeparator();
 
-		if (!this.buttons) {
+		if (!this.buttons_or_rating) {
 			panel.m.AppendMenuItem(MF_GRAYED, 1203, 'Layout');
 			panel.m.AppendMenuItem(MF_STRING, 1204, 'Text only');
 			panel.m.AppendMenuItem(MF_STRING, 1205, 'Album Art top, Text bottom');
@@ -68,21 +72,28 @@ function _text_display(x, y, w, h, buttons) {
 		}
 
 		if (this.properties.layout.value != 1) {
-			panel.s10.AppendMenuItem(MF_STRING, 1210, 'Left');
-			panel.s10.AppendMenuItem(MF_STRING, 1211, 'Right');
-			panel.s10.AppendMenuItem(MF_STRING, 1212, 'Centre');
-			panel.s10.CheckMenuRadioItem(1210, 1212, this.properties.halign.value + 1210);
-			panel.s10.AppendTo(panel.m, MF_STRING, 'Text alignment (horizontal)');
-			panel.s11.AppendMenuItem(MF_STRING, 1220, 'Top');
-			panel.s11.AppendMenuItem(MF_STRING, 1221, 'Bottom');
-			panel.s11.AppendMenuItem(MF_STRING, 1222, 'Centre');
-			panel.s11.CheckMenuRadioItem(1220, 1222, this.properties.valign.value + 1220);
-			panel.s11.AppendTo(panel.m, MF_STRING, 'Text alignment (vertical)');
-			if (this.properties.layout.value == 0)
-			{
+			// s10 used by album art
+			panel.s11.AppendMenuItem(MF_STRING, 1210, 'Left');
+			panel.s11.AppendMenuItem(MF_STRING, 1211, 'Right');
+			panel.s11.AppendMenuItem(MF_STRING, 1212, 'Centre');
+			panel.s11.CheckMenuRadioItem(1210, 1212, this.properties.halign.value + 1210);
+			panel.s11.AppendTo(panel.m, MF_STRING, 'Text alignment (horizontal)');
+			panel.s12.AppendMenuItem(MF_STRING, 1220, 'Top');
+			panel.s12.AppendMenuItem(MF_STRING, 1221, 'Bottom');
+			panel.s12.AppendMenuItem(MF_STRING, 1222, 'Centre');
+			panel.s12.CheckMenuRadioItem(1220, 1222, this.properties.valign.value + 1220);
+			panel.s12.AppendTo(panel.m, MF_STRING, 'Text alignment (vertical)');
+
+			if (this.properties.layout.value == 0) {
 				panel.m.AppendMenuItem(MF_STRING, 1230, 'Margin...');
 			}
+
 			panel.m.AppendMenuSeparator();
+		}
+
+		if (this.properties.layout.value > 0) {
+			panel.m.AppendMenuItem(MF_GRAYED, 0, 'Album art options');
+			albumart.rbtn_up(x, y);
 		}
 	}
 
@@ -90,7 +101,7 @@ function _text_display(x, y, w, h, buttons) {
 		switch (idx) {
 		case 1200:
 			try {
-				var tmp = utils.TextBox('You can use full title formatting here. Custom colours and fonts are supported', window.Name, this.properties.text_tf.value);
+				var tmp = utils.TextBox('You can use full title formatting here. Custom colours and fonts are supported. See Help.', window.Name, this.properties.text_tf.value, this.help_url);
 				if (tmp != this.properties.text_tf.value) {
 					this.properties.text_tf.value = tmp;
 					this.refresh();
@@ -100,23 +111,23 @@ function _text_display(x, y, w, h, buttons) {
 		case 1201:
 			this.properties.per_second.toggle();
 			break;
-		case 1202:
-			utils.Run('https://jscript-panel.github.io/docs/guides/font-rgb/');
-			break;
 		case 1204:
 		case 1205:
 		case 1206:
 			this.properties.layout.value = idx - 1204;
 			this.refresh(true);
+			_tt('');
 			break;
 		case 1207:
 			this.properties.albumart.toggle();
+
 			if (this.properties.albumart.enabled) {
 				panel.custom_background = false;
 				albumart.metadb_changed();
 			} else {
 				panel.custom_background = true;
 			}
+
 			this.refresh(true);
 			break;
 		case 1208:
@@ -137,13 +148,19 @@ function _text_display(x, y, w, h, buttons) {
 			break;
 		case 1230:
 			var tmp = utils.InputBox('Enter a margin here. It will be ignored if Album Art is enabled.', window.Name, this.properties.margin.value);
+
 			if (tmp != this.properties.margin.value) {
 				this.properties.margin.value = tmp;
 				this.size();
-				window.Repaint();
 			}
+
+			break;
+		default:
+			albumart.rbtn_up_done(idx);
 			break;
 		}
+
+		window.Repaint();
 	}
 
 	this.refresh = function (force) {
@@ -153,8 +170,9 @@ function _text_display(x, y, w, h, buttons) {
 			var tmp = '';
 			var tfo = panel.get_tfo(this.properties.text_tf.value);
 
-			if (panel.selection.value == 0 && fb.IsPlaying) {
+			if (panel.prefer_playing()) {
 				var loc = plman.GetPlayingItemLocation();
+
 				if (loc.IsValid) {
 					tmp = tfo.EvalPlaylistItem(loc.PlaylistIndex, loc.PlaylistItemIndex);
 				} else {
@@ -163,27 +181,32 @@ function _text_display(x, y, w, h, buttons) {
 			} else {
 				var PlaylistIndex = plman.ActivePlaylist;
 				var PlaylistItemIndex = plman.GetPlaylistFocusItemIndex(PlaylistIndex);
-				tmp = tfo.EvalPlaylistItem(PlaylistIndex, PlaylistItemIndex);
+
+				if (PlaylistIndex > -1 && PlaylistItemIndex > -1) {
+					tmp = tfo.EvalPlaylistItem(PlaylistIndex, PlaylistItemIndex);
+				} else {
+					tmp = tfo.EvalWithMetadb(panel.metadb);
+				}
 			}
 
 			if (force || tmp != this.text) {
 				this.clear_layout()
 				this.text = tmp;
+
 				if (this.text.length) {
-					var font_obj = JSON.parse(panel.fonts.normal);
-					var font_styles = GetFontStyles(this.text, font_obj);
-					var colour_styles = GetColourStyles(this.text, this.default_colour);
-					this.colour_string = JSON.stringify(colour_styles);
+					var font = JSON.parse(panel.fonts.normal);
+
 					if (this.properties.layout.value == 1) {
-						this.text_layout = utils.CreateTextLayout2(StripCodes(this.text), JSON.stringify(font_styles), 2, 2);
+						this.text_layout = utils.CreateTextLayout(this.text, font.Name, font.Size, font.Weight, font.Style, font.Stretch, 2, 0);
 					} else {
-						this.text_layout = utils.CreateTextLayout2(StripCodes(this.text), JSON.stringify(font_styles), this.properties.halign.value, this.properties.valign.value);
+						this.text_layout = utils.CreateTextLayout(this.text, font.Name, font.Size, font.Weight, font.Style, font.Stretch, this.properties.halign.value, this.properties.valign.value);
 					}
 				}
 			}
 		} else {
 			this.clear_layout();
 		}
+
 		this.size();
 		window.Repaint();
 	}
@@ -195,66 +218,81 @@ function _text_display(x, y, w, h, buttons) {
 		switch (this.properties.layout.value) {
 		case 0: // text only
 			var margin_property = _scale(this.properties.margin.value);
+
 			this.x = margin_property;
 			this.y = margin_property;
 			this.w = panel.w - (margin_property * 2);
 			this.h = panel.h - (margin_property * 2);
-			if (this.text_layout) this.text_height = this.text_layout.CalcTextHeight(this.w);
+
+			if (this.text_layout) {
+				this.text_height = this.text_layout.CalcTextHeight(this.w);
+			}
 			break;
 		case 1: // album art top, text bottom
-			this.x = margin;
-			this.w = panel.w - (margin * 2);
-			if (this.text_layout) this.text_height = this.text_layout.CalcTextHeight(this.w);
+			var width = panel.w - (margin * 2);
 
-			if (this.buttons) {
-				this.y = panel.h - _scale(30) - this.text_height - (margin * 2);
-				this.h = this.text_height;
-			} else {
-				this.y = panel.h - this.text_height - (margin * 2);
-				this.h = this.text_height + (margin * 2);
+			if (this.text_layout) {
+				this.text_height = this.text_layout.CalcTextHeight(width);
 			}
+
+			var text_height = Math.min(this.text_height + margin, panel.h / 2);
 
 			albumart.x = margin;
 			albumart.y = margin;
-			albumart.w = panel.w - (margin * 2);
+			albumart.w = width;
+			albumart.h = panel.h - text_height - (margin * 2);
 
-			if (this.buttons) {
-				albumart.h = panel.h - this.h - margin - _scale(60);
-			} else {
-				albumart.h = panel.h - this.h - margin;
+			this.x = margin;
+			this.y = panel.h - text_height;
+			this.w = width;
+			this.h = text_height - margin;
+
+			if (this.buttons_or_rating) {
+				albumart.h -= _scale(40);
+				this.y -= _scale(40);
 			}
-
 			break;
 		case 2: // album art left, text right
 			albumart.x = margin;
 			albumart.y = margin;
 			albumart.w = (panel.w / 2) - margin;
 			albumart.h = panel.h - (margin * 2);
+
 			this.x = (margin * 2) + albumart.w;
 			this.y = margin;
 			this.w = albumart.w - margin;
 			this.h = panel.h - (margin * 2);
-			if (this.text_layout) this.text_height = this.text_layout.CalcTextHeight(this.w);
+
+			if (this.text_layout) {
+				this.text_height = this.text_layout.CalcTextHeight(this.w);
+			}
 			break;
 		}
 
-		if (this.text_height < this.h) this.offset = 0;
-		else if (this.offset < this.h - this.text_height) this.offset = this.h - this.text_height;
+		if (this.text_height < this.h)
+			this.offset = 0;
+		else if (this.offset < this.h - this.text_height)
+			this.offset = this.h - this.text_height;
 
 		this.scroll_step = _scale(panel.fonts.size.value) * 4;
 	}
 
 	this.wheel = function (s) {
-		if (this.containsXY(this.mx, this.my)) {
-			if (this.text_height > this.h) {
-				this.offset += s * this.scroll_step;
-				if (this.offset > 0) this.offset = 0;
-				else if (this.offset < this.h - this.text_height) this.offset = this.h - this.text_height;
-				window.RepaintRect(this.x, this.y, this.w, this.h);
-			}
-			return true;
+		if (!this.containsXY(this.mx, this.my))
+			return false;
+
+		if (this.text_height > this.h) {
+			this.offset += s * this.scroll_step;
+
+			if (this.offset > 0)
+				this.offset = 0;
+			else if (this.offset < this.h - this.text_height)
+				this.offset = this.h - this.text_height;
+
+			window.RepaintRect(this.x, this.y, this.w, this.h);
 		}
-		return false;
+
+		return true;
 	}
 
 	panel.display_objects.push(this);
@@ -262,9 +300,8 @@ function _text_display(x, y, w, h, buttons) {
 	this.y = y;
 	this.w = w;
 	this.h = h;
-	this.buttons = buttons;
+	this.buttons_or_rating = buttons_or_rating;
 	this.default_colour = 0;
-	this.colour_string = '';
 	this.text_layout = null;
 	this.text_height = 0;
 	this.scroll_step = 0;
@@ -272,15 +309,10 @@ function _text_display(x, y, w, h, buttons) {
 	this.my = 0;
 	this.offset = 0;
 	this.text = '';
-
-	if (this.buttons) {
-		window.SetProperty('2K3.TEXT.ALBUMART', true);
-		window.SetProperty('2K3.TEXT.ALBUMART.BLUR', true);
-		window.SetProperty('2K3.TEXT.LAYOUT', 1);
-	}
+	this.help_url = 'https://jscript-panel.github.io/docs/guides/font-rgb/';
 
 	this.properties = {
-		text_tf : new _p('2K3.TEXT.DISPLAY.TF', '$font(Segoe UI,24,700)\r\n[%title%$crlf()]\r\n$font(Segoe UI,18)\r\n[%artist%$crlf()]\r\n$font(Segoe UI,14)\r\n[%album% \'(\'%date%\')\'$crlf()]\r\n$font(Segoe UI,10)\r\n[%__bitrate% kbps %codec% [%codec_profile% ][%__tool% ][%__tagtype%]]'),
+		text_tf : new _p('2K3.TEXT.DISPLAY.TF', ''),
 		halign : new _p('2K3.TEXT.HALIGN', 2),
 		valign : new _p('2K3.TEXT.VALIGN', 2),
 		per_second : new _p('2K3.TEXT.PER.SECOND', false),
@@ -288,6 +320,16 @@ function _text_display(x, y, w, h, buttons) {
 		albumart_blur : new _p('2K3.TEXT.ALBUMART.BLUR', true),
 		layout : new _p('2K3.TEXT.LAYOUT', 0), // 0 text only, 1 album art top text bottom 2 album art left text right
 		margin : new _p('2K3.TEXT.MARGIN', 6),
+	}
+
+	if (this.properties.text_tf.value.empty()) {
+		this.properties.text_tf.value = utils.ReadUTF8(fb.ComponentPath + 'samples\\text\\text_display_default');
+	}
+
+	if (this.buttons_or_rating) {
+		this.properties.layout.value = 1;
+		this.properties.albumart.enabled = true;
+		this.properties.albumart_blur.enabled = true;
 	}
 
 	if (this.properties.albumart.enabled) {

@@ -37,17 +37,20 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 	}
 
 	this.drawRowContents = function (gr) {
-		var is_item_selected = plman.IsPlaylistItemSelected(g_active_playlist, this.track_index);
-		var txt_color = is_item_selected ? g_colour_selected_text : g_colour_text;
+		var is_focused = p.list.focusedTrackId == this.track_index;
+		var is_playing = p.list.nowplaying.PlaylistIndex == g_active_playlist && p.list.nowplaying.PlaylistItemIndex == this.track_index;
+		var is_selected = plman.IsPlaylistItemSelected(g_active_playlist, this.track_index);
+		var txt_color = is_selected ? g_colour_selected_text : g_colour_text;
 		var fader_txt = setAlpha(txt_color, 180);
 		var rating_colour = g_dynamic ? txt_color : g_colour_rating;
 		var mood_colour = g_dynamic ? txt_color : g_colour_mood;
 
-		if (is_item_selected) {
+		if (is_selected) {
 			gr.FillRectangle(this.x, this.y, this.w, this.h, g_colour_selection);
-			if (p.list.focusedTrackId == this.track_index) {
-				DrawRectangle(gr, this.x + 1, this.y, this.w - 2, this.h - 1, setAlpha(txt_color, 150));
-			}
+		}
+
+		if (is_focused) {
+			DrawRectangle(gr, this.x, this.y, this.w - 1, this.h - 1, fader_txt);
 		}
 
 		if (cList.enableExtraLine) {
@@ -86,17 +89,17 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 						break;
 					};
 
-					if (fb.IsPlaying && plman.PlayingPlaylist == g_active_playlist && this.track_index == p.list.nowplaying.PlaylistItemIndex) {
+					if (is_playing) {
 						if (fb.IsPaused) {
-							gr.WriteText(chars.pause, g_font_fluent_20.str, txt_color, cx, this.y + 2, g_queue_width, cRow.playlist_h - 4, 2, 2);
+							gr.WriteTextSimple(chars.pause, g_font_fluent_20, txt_color, cx, this.y + 2, g_queue_width, cRow.playlist_h - 4, 2, 2);
 						} else {
-							gr.WriteText(chars.play, g_font_fluent_20.str, g_seconds % 2 == 0 ? txt_color : setAlpha(txt_color, 60), cx + 2, this.y + 2, g_queue_width, cRow.playlist_h - 4, 2, 2);
+							gr.WriteTextSimple(chars.play, g_font_fluent_20, g_seconds % 2 == 0 ? txt_color : setAlpha(txt_color, 60), cx + 2, this.y + 2, g_queue_width, cRow.playlist_h - 4, 2, 2);
 						}
 					} else {
 						var queue_index = tf_arr[j];
 						if (queue_index.length) {
 							DrawRectangle(gr, cx, this.y + 2, g_queue_width, cRow.playlist_h - 5, txt_color);
-							gr.WriteText(queue_index, g_font_20_bold.str, txt_color, cx + 1, this.y + 1, g_queue_width, cRow.playlist_h - 4, 2, 2, 1, 1);
+							gr.WriteTextSimple(queue_index, g_font_20_bold, txt_color, cx + 1, this.y + 1, g_queue_width, cRow.playlist_h - 4, 2, 2, 1, 1);
 						}
 					}
 					break;
@@ -121,7 +124,7 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 						this.mood = StripCode(tf_arr[j], chars.etx) || 0;
 					}
 
-					gr.WriteText(this.mood == 0 ? chars.heart_off : chars.heart_on, g_font_fluent_20.str, mood_colour, columns.mood_x, this.y, columns.mood_w, cRow.playlist_h, 2, 2);
+					gr.WriteTextSimple(this.mood == 0 ? chars.heart_off : chars.heart_on, g_font_fluent_20, mood_colour, columns.mood_x, this.y, columns.mood_w, cRow.playlist_h, 2, 2);
 					break;
 				case "Rating":
 					cw = p.headerBar.columns[j].w - g_z5;
@@ -139,22 +142,28 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 					}
 
 					this.rating = StripCode(tf_arr[j], chars.etx) || 0;
-					gr.WriteText(chars.rating_off.repeat(5), g_font_fluent_20.str, rating_colour & 0x20ffffff, columns.rating_x, this.y, columns.rating_w, cRow.playlist_h, 0, 2);
-					gr.WriteText(chars.rating_on.repeat(this.rating), g_font_fluent_20.str, rating_colour, columns.rating_x, this.y, columns.rating_w, cRow.playlist_h, 0, 2);
+					gr.WriteTextSimple(chars.rating_off.repeat(5), g_font_fluent_20, rating_colour & 0x20ffffff, columns.rating_x, this.y, columns.rating_w, cRow.playlist_h, 0, 2);
+					gr.WriteTextSimple(chars.rating_on.repeat(this.rating), g_font_fluent_20, rating_colour, columns.rating_x, this.y, columns.rating_w, cRow.playlist_h, 0, 2);
 					break;
 				default:
-					this.drawText(gr, tf_arr[j], txt_color, cx, tf1_y, cw, tf1_h, p.headerBar.columns[j].align);
-					if (cList.enableExtraLine) this.drawText(gr, tf2_arr[j], fader_txt, cx, tf2_y, cw, tf2_h, p.headerBar.columns[j].align);
+					this.drawText(gr, tf_arr[j], g_font_12, txt_color, cx, tf1_y, cw, tf1_h, p.headerBar.columns[j].align);
+					if (cList.enableExtraLine) this.drawText(gr, tf2_arr[j], g_font_12, fader_txt, cx, tf2_y, cw, tf2_h, p.headerBar.columns[j].align);
 					break;
 				}
 			}
 		}
 	}
 
-	this.drawText = function (gr, text, colour, x, y, w, h, align) {
-		if (!text || text == "null") return;
-		if (g_dynamic) text = StripCode(text, chars.etx);
-		DrawColouredText(gr, text, g_font_12.str, colour, x, y, w, h, align, 2, 1, 1);
+	this.drawText = function (gr, text, font, colour, x, y, w, h, align) {
+		if (!text)
+			return;
+
+		if (g_dynamic) {
+			// WriteTextSimple ignores $rgb code
+			gr.WriteTextSimple(text, font, colour, x, y, w, h, align, 2, 1, 1);
+		} else {
+			gr.WriteText(text, font, colour, x, y, w, h, align, 2, 1, 1);
+		}
 	}
 
 	this.draw = function (gr, x, y, w, h) {
@@ -202,28 +211,28 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 
 			var text_left_padding = g_z2;
 			var scrollbar_gap = (p.scrollbar.visible && (p.list.totalRows > p.list.totalRowVisible)) ? 0 : cScrollBar.width;
-			var lg1_right_field_w = this.r1.calc_width(g_font_group1.obj) + cList.borderWidth * 2;
-			var lg2_right_field_w = this.r2.calc_width(g_font_group2.obj) + cList.borderWidth * 2;
+			var lg1_right_field_w = this.r1.calc_width2(g_font_group1) + cList.borderWidth * 2;
+			var lg2_right_field_w = this.r2.calc_width2(g_font_group2) + cList.borderWidth * 2;
 
 			var group_text_colour = g_colour_highlight;
 			var group_text_colour_fader = setAlpha(group_text_colour, 180);
 
 			if (this.heightInRow == 1) {
-				gr.WriteText(this.l1 + " / " + this.l2, g_font_group1.str, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) - 1, this.w - cover_size - text_left_padding * 4 - lg1_right_field_w - scrollbar_gap, this.h, 0, 2, 1, 1);
-				gr.WriteText(this.r1, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) - 1, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, this.h, 1, 2, 1, 1);
+				this.drawText(gr, this.l1 + " / " + this.l2, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) - 1, this.w - cover_size - text_left_padding * 4 - lg1_right_field_w - scrollbar_gap, this.h, 0);
+				this.drawText(gr, this.r1, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) - 1, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, this.h, 1);
 				gr.FillRectangle(this.x + cover_size + text_left_padding, Math.round(this.y + cRow.playlist_h * 1 - groupDelta - 5), this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, 1, group_text_colour);
 			} else {
-				gr.WriteText(this.l1, g_font_group1.str, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) + 3, this.w - cover_size - text_left_padding * 4 - lg1_right_field_w - scrollbar_gap, cRow.playlist_h, 0, 2, 1, 1);
-				gr.WriteText(this.l2, g_font_group2.str, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg2_right_field_w - scrollbar_gap, cRow.playlist_h, 0, 2, 1, 1);
-				gr.WriteText(this.r1, g_font_group1.str, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) + 3, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, cRow.playlist_h, 1, 2, 1, 1);
-				gr.WriteText(this.r2, g_font_group2.str, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 5 + 1 - scrollbar_gap, cRow.playlist_h, 1, 2, 1, 1);
+				this.drawText(gr, this.l1, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) + 3, this.w - cover_size - text_left_padding * 4 - lg1_right_field_w - scrollbar_gap, cRow.playlist_h, 0);
+				this.drawText(gr, this.l2, g_font_group2, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg2_right_field_w - scrollbar_gap, cRow.playlist_h, 0);
+				this.drawText(gr, this.r1, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) + 3, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, cRow.playlist_h, 1);
+				this.drawText(gr, this.r2, g_font_group2, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 5 + 1 - scrollbar_gap, cRow.playlist_h, 1);
 				gr.FillRectangle(this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h * 2 - groupDelta) - 8, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, 1, group_text_colour);
 
 				if (this.obj && this.heightInRow > 2) {
 					var lg3_left_field = this.obj.count + (this.obj.count > 1 ? " tracks. " : " track. ") + this.obj.total_group_duration_txt + ".";
 					var lg3_right_field = (this.group_index + 1) + " / " + p.list.groups.length;
-					var lg3_right_field_w = lg3_right_field.calc_width(g_font_12.obj) + cList.borderWidth * 2;
-					gr.WriteText(lg3_left_field, g_font_12.str, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h * 2 - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg3_right_field_w - scrollbar_gap, cRow.playlist_h, 0, 0, 1);
+					var lg3_right_field_w = lg3_right_field.calc_width2(g_font_12) + cList.borderWidth * 2;
+					gr.WriteTextSimple(lg3_left_field, g_font_12, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h * 2 - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg3_right_field_w - scrollbar_gap, cRow.playlist_h, 0, 0, 1);
 				}
 			}
 
@@ -279,9 +288,7 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 				} else { // track
 					if (!rating_hover && !mood_hover) {
 						if (is_item_selected) {
-							if (playlist_can_reorder(g_active_playlist)) {
-								g_drag_drop_internal = true;
-							}
+							g_drag_drop_internal = true;
 							if (utils.IsKeyPressed(VK_SHIFT)) {
 								if (p.list.focusedTrackId != this.track_index) {
 									if (p.list.SHIFT_start_id != null) {
@@ -549,7 +556,8 @@ function oList(object_name) {
 		this.groups = [];
 		this.totalRows = 0;
 		g_total_duration_text = utils.FormatDuration(this.handleList.CalcTotalDuration());
-		if (this.count == 0) return;
+		if (this.count == 0)
+			return;
 
 		var previous = "";
 		var g = 0, t = 0, group_duration = 0;
@@ -884,9 +892,7 @@ function oList(object_name) {
 		}
 		var width = 0;
 
-		if (fb.IsPlaying && plman.PlayingPlaylist == g_active_playlist) {
-			this.nowplaying = plman.GetPlayingItemLocation();
-		}
+		this.nowplaying = plman.GetPlayingItemLocation();
 
 		var fin = this.items.length;
 		for (var i = 0; i < fin; i++) {

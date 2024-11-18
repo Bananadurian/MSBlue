@@ -12,7 +12,9 @@ function on_font_changed() {
 }
 
 function on_get_album_art_done(metadb, art_id, image) {
-	if (!image) return;
+	if (!image)
+		return;
+
 	for (var i = 0; i < brw.groups.length; i++) {
 		if (brw.groups[i].metadb && brw.groups[i].metadb.Compare(metadb)) {
 			var cached_filename = generate_filename(brw.groups[i].cachekey, art_id);
@@ -32,20 +34,24 @@ function on_size() {
 }
 
 function clamp(value, min, max) {
-	if (value < min) return min;
-	if (value > max) return max;
-	return value;
+	if (value < min)
+		return min;
+	else if (value > max)
+		return max;
+	else
+		return value;
 }
 
 function draw_header_bar(gr, text, obj) {
 	gr.FillRectangle(0, 0, ww, obj.y - 1, g_colour_background);
 	gr.FillRectangle(obj.x, 0, obj.w + cScrollBar.width, ppt.headerBarHeight - 1, g_colour_background & 0x20ffffff);
 	gr.FillRectangle(obj.x, ppt.headerBarHeight - 2, obj.w + cScrollBar.width, 1, g_colour_text & 0x22ffffff);
-	gr.WriteText(text, g_font_box.str, g_colour_text, 0, 0, ww - 5, ppt.headerBarHeight - 1, 1, 2, 1, 1);
+	gr.WriteTextSimple(text, g_font_box, g_colour_text, 0, 0, ww - 5, ppt.headerBarHeight - 1, 1, 2, 1, 1);
 }
 
 function update_extra_font_size(step) {
 	var tmp = clamp(ppt.extra_font_size + step, 0, 10);
+
 	if (ppt.extra_font_size != tmp) {
 		ppt.extra_font_size = tmp;
 		window.SetProperty("SMOOTH.EXTRA.FONT.SIZE", ppt.extra_font_size);
@@ -69,34 +75,32 @@ function get_images() {
 	images.noart = utils.CreateImage(cover_size, cover_size);
 	gb = images.noart.GetGraphics();
 	gb.FillRectangle(0, 0, cover_size, cover_size, background);
-	gb.WriteText("NO\nCOVER", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
+	gb.WriteTextSimple("NO\nCOVER", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
 	images.noart.ReleaseGraphics();
 
 	images.stream = utils.CreateImage(cover_size, cover_size);
 	gb = images.stream.GetGraphics();
 	gb.FillRectangle(0, 0, cover_size, cover_size, background);
-	gb.WriteText("STREAM", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
+	gb.WriteTextSimple("STREAM", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
 	images.stream.ReleaseGraphics();
 
 	images.all = utils.CreateImage(cover_size, cover_size);
 	gb = images.all.GetGraphics();
 	gb.FillRectangle(0, 0, cover_size, cover_size, background);
-	gb.WriteText("ALL\nITEMS", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
+	gb.WriteTextSimple("ALL\nITEMS", image_font, text_colour, 1, 1, cover_size, cover_size, 2, 2);
 	images.all.ReleaseGraphics();
 
 	images.reset = utils.CreateImage(button_size, button_size);
 	gb = images.reset.GetGraphics();
-	gb.WriteText(chars.close, g_font_fluent_12.str, g_colour_text, 0, 0, button_size, button_size, 2, 2);
+	gb.WriteTextSimple(chars.close, g_font_fluent_12, g_colour_text, 0, 0, button_size, button_size, 2, 2);
 	images.reset.ReleaseGraphics();
 
-	images.reset_hover = utils.CreateImage(button_size, button_size);
-	gb = images.reset_hover.GetGraphics();
-	gb.WriteText(chars.close, g_font_fluent_12.str, RGB(255, 50, 50), 0, 0, button_size, button_size, 2, 2);
-	images.reset_hover.ReleaseGraphics();
+	// force re-creation of buttons with new colours
+	if (typeof brw == 'object') brw.setSize();
 }
 
 function validate_indexes(playlist, item) {
-	return playlist >=0 && playlist < plman.PlaylistCount && item >= 0 && item < plman.GetPlaylistItemCount(playlist);
+	return playlist >= 0 && playlist < plman.PlaylistCount && item >= 0 && item < plman.GetPlaylistItemCount(playlist);
 }
 
 function play(playlist, item) {
@@ -113,9 +117,12 @@ function generate_filename(cachekey, art_id) {
 function get_art(metadb, cachekey, art_id) {
 	var filename = generate_filename(cachekey, art_id);
 	var img = images.cache[filename];
-	if (img) return img;
+
+	if (img)
+		return img;
 
 	img = utils.LoadImage(filename);
+
 	if (img) {
 		images.cache[filename] = img;
 		return img;
@@ -166,9 +173,10 @@ function drawSelectedRectangle(gr, x, y, w, h) {
 function GetKeyboardMask() {
 	if (utils.IsKeyPressed(VK_CONTROL))
 		return KMask.ctrl;
-	if (utils.IsKeyPressed(VK_SHIFT))
+	else if (utils.IsKeyPressed(VK_SHIFT))
 		return KMask.shift;
-	return KMask.none;
+	else
+		return KMask.none;
 }
 
 function button(normal, hover, down) {
@@ -198,33 +206,36 @@ function button(normal, hover, down) {
 	}
 
 	this.checkstate = function (event, x, y) {
-		this.ishover = (x > this.x && x < this.x + this.w - 1 && y > this.y && y < this.y + this.h - 1);
-		this.old = this.state;
+		var hover = x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
+		var old = this.state;
+
 		switch (event) {
 		case "lbtn_down":
 			switch (this.state) {
 			case ButtonStates.normal:
 			case ButtonStates.hover:
-				this.state = this.ishover ? ButtonStates.down : ButtonStates.normal;
+				this.state = hover ? ButtonStates.down : ButtonStates.normal;
 				this.isdown = true;
 				break;
 			}
 			break;
 		case "lbtn_up":
-			this.state = this.ishover ? ButtonStates.hover : ButtonStates.normal;
+			this.state = hover ? ButtonStates.hover : ButtonStates.normal;
 			this.isdown = false;
 			break;
 		case "move":
 			switch (this.state) {
 			case ButtonStates.normal:
 			case ButtonStates.hover:
-				this.state = this.ishover ? ButtonStates.hover : ButtonStates.normal;
+				this.state = hover ? ButtonStates.hover : ButtonStates.normal;
 				break;
 			}
 			break;
 		}
-		if (this.state != this.old)
+
+		if (this.state != old)
 			this.repaint();
+
 		return this.state;
 	}
 }
@@ -259,15 +270,11 @@ function scale(size) {
 }
 
 function smooth_font(name, size, bold) {
-	var obj = {
+	return JSON.stringify({
 		Name : name,
 		Size : scale(size),
 		Weight : bold ? 700 : 400,
-	};
-	return {
-		obj : obj,
-		str : JSON.stringify(obj),
-	};
+	});
 }
 
 function get_font() {
@@ -290,8 +297,8 @@ function get_font() {
 	g_font_fluent_12 = smooth_font("Segoe Fluent Icons", 12);
 	g_font_fluent_20 = smooth_font("Segoe Fluent Icons", 20);
 
-	g_time_width = "00:00:00".calc_width(g_font.obj) + 20;
-	g_rating_width = chars.rating_off.repeat(5).calc_width(g_font_fluent_20.obj) + 4;
+	g_time_width = "00:00:00".calc_width2(g_font) + 20;
+	g_rating_width = chars.rating_off.repeat(5).calc_width2(g_font_fluent_20) + 4;
 
 	g_font_height = g_fsize + 4;
 }
@@ -376,7 +383,7 @@ var ppt = {
 	rowScrollStep: 3,
 };
 
-var CACHE_FOLDER = fb.ProfilePath + "js_smooth_cache\\";
+var CACHE_FOLDER = fb.ProfilePath + "js_data\\smooth_cache\\";
 utils.CreateFolder(CACHE_FOLDER);
 
 var g_font;
@@ -397,6 +404,7 @@ var g_colour_highlight = 0;
 var g_time_width = 0;
 var g_rating_width = 0;
 
+var g_active_playlist = plman.ActivePlaylist;
 var g_wallpaperImg = null;
 var isScrolling = false;
 var need_repaint = false;

@@ -1,8 +1,44 @@
 function _panel(options) {
-	this.calc_text_width = function (text) {
-		return utils.CalcTextWidth(text, this.fonts.name, _scale(this.fonts.size.value));
+	this.create_font = function (size, weight) {
+		return JSON.stringify({
+			Name : this.fonts.name,
+			Size : _scale(size),
+			Weight : weight || 400,
+			Style : 0,
+			Stretch : 5
+		});
 	}
 
+	this.draw_header = function (gr, text) {
+		gr.WriteText2(text, this.fonts.small, this.colours.highlight, LM, 0, this.w - (LM * 2), TM, DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
+		gr.DrawLine(0, TM + 0.5, this.w, TM + 0.5, 1, setAlpha(this.colours.highlight, 80));
+	}
+
+	this.get_tfo = function (t) {
+		if (!this.tfo[t]) {
+			this.tfo[t] = fb.TitleFormat(t);
+		}
+
+		return this.tfo[t];
+	}
+
+	this.prefer_playing = function () {
+		return this.selection.value == 0 && fb.IsPlaying;
+	}
+
+	this.tf = function (t) {
+		if (!this.metadb)
+			return '';
+
+		var tfo = this.get_tfo(t);
+
+		if (this.prefer_playing())
+			return tfo.Eval();
+
+		return tfo.EvalWithMetadb(this.metadb);
+	}
+
+// callbacks begin
 	this.colours_changed = function () {
 		if (window.IsDefaultUI) {
 			this.colours.background = window.GetColourDUI(1);
@@ -15,34 +51,27 @@ function _panel(options) {
 		}
 	}
 
-	this.draw_header = function (gr, text) {
-		DrawStyledText(gr, text, this.fonts.small, this.colours.highlight, LM, 0, this.w - (LM * 2), TM, DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_WORD_WRAPPING_NO_WRAP, DWRITE_TRIMMING_GRANULARITY_CHARACTER);
-		gr.DrawLine(0, TM + 0.5, this.w, TM + 0.5, 1, setAlpha(this.colours.highlight, 80));
-	}
-
 	this.font_changed = function () {
 		this.fonts.name = JSON.parse(window.IsDefaultUI ? window.GetFontDUI(0) : window.GetFontCUI(0)).Name;
-		this.fonts.normal = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value)});
-		this.fonts.small = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value - 2)});
-		this.fonts.title = JSON.stringify({Name:this.fonts.name,Size:_scale(this.fonts.size.value),Weight:700});
+		this.fonts.normal = this.create_font(this.fonts.size.value);
+		this.fonts.small = this.create_font(this.fonts.size.value - 2);
+		this.fonts.title = this.create_font(this.fonts.size.value, 700);
 		this.row_height = _scale(this.fonts.size.value + 4);
 		_.invoke(this.text_objects, 'font_changed');
-		_.invoke(this.list_objects, 'size', true);
+		_.invoke(this.list_objects, 'font_changed');
 		_.invoke(this.display_objects, 'refresh', true);
 	}
 
-	this.get_tfo = function (t) {
-		if (!this.tfo[t]) {
-			this.tfo[t] = fb.TitleFormat(t);
-		}
-		return this.tfo[t];
-	}
-
 	this.item_focus_change = function () {
-		if (!this.metadb_func) return;
+		if (!this.metadb_func)
+			return;
 
-		this.metadb = this.selection.value == 0 && fb.IsPlaying ? fb.GetNowPlaying() : fb.GetFocusItem();
-		if (!this.metadb) _tt('');
+		this.metadb = this.prefer_playing() ? fb.GetNowPlaying() : fb.GetFocusItem();
+
+		if (!this.metadb) {
+			_tt('');
+		}
+
 		on_metadb_changed();
 	}
 
@@ -59,6 +88,7 @@ function _panel(options) {
 			var col = this.colours.custom_background.value;
 			break;
 		}
+
 		gr.Clear(col);
 	}
 
@@ -72,19 +102,23 @@ function _panel(options) {
 		this.s12 = window.CreatePopupMenu();
 		this.s13 = window.CreatePopupMenu();
 		this.s14 = window.CreatePopupMenu();
+
 		// panel 1-999
 		// object 1000+
 		if (object) {
 			object.rbtn_up(x, y);
 		}
+
 		if (this.list_objects.length || this.text_objects.length || this.display_objects.length) {
 			_.forEach(this.fonts.sizes, function (item) {
 				this.s1.AppendMenuItem(MF_STRING, item, item);
 			}, this);
+
 			this.s1.CheckMenuRadioItem(_.first(this.fonts.sizes), _.last(this.fonts.sizes), this.fonts.size.value);
 			this.s1.AppendTo(this.m, MF_STRING, 'Font size');
 			this.m.AppendMenuSeparator();
 		}
+
 		if (this.custom_background) {
 			this.s2.AppendMenuItem(MF_STRING, 100, window.IsDefaultUI ? 'Use default UI setting' : 'Use columns UI setting');
 			this.s2.AppendMenuItem(MF_STRING, 101, 'Splitter');
@@ -95,6 +129,7 @@ function _panel(options) {
 			this.s2.AppendTo(this.m, MF_STRING, 'Background colour');
 			this.m.AppendMenuSeparator();
 		}
+
 		if (this.metadb_func) {
 			this.s3.AppendMenuItem(MF_STRING, 110, 'Prefer now playing');
 			this.s3.AppendMenuItem(MF_STRING, 111, 'Follow selected track (playlist)');
@@ -102,6 +137,7 @@ function _panel(options) {
 			this.s3.AppendTo(this.m, MF_STRING, 'Selection mode');
 			this.m.AppendMenuSeparator();
 		}
+
 		this.m.AppendMenuItem(MF_STRING, 120, 'Configure...');
 
 		var idx = this.m.TrackPopupMenu(x, y);
@@ -139,6 +175,7 @@ function _panel(options) {
 			}
 			break;
 		}
+
 		return true;
 	}
 
@@ -146,17 +183,7 @@ function _panel(options) {
 		this.w = window.Width;
 		this.h = window.Height;
 	}
-
-	this.tf = function (t) {
-		if (!this.metadb) {
-			return '';
-		}
-		var tfo = this.get_tfo(t);
-		if (this.selection.value == 0 && fb.IsPlaying) {
-			return tfo.Eval();
-		}
-		return tfo.EvalWithMetadb(this.metadb);
-	}
+// callbacks end
 
 	this.fonts = {};
 	this.colours = {};
@@ -175,6 +202,7 @@ function _panel(options) {
 	if (this.metadb_func) {
 		this.selection = new _p('2K3.PANEL.SELECTION', 0);
 	}
+
 	if (typeof options == 'object') {
 		if (options.custom_background === true) {
 			this.custom_background = true;
@@ -182,6 +210,7 @@ function _panel(options) {
 			this.colours.custom_background = new _p('2K3.PANEL.COLOURS.CUSTOM.BACKGROUND', RGB(0, 0, 0));
 		}
 	}
+
 	this.colours_changed();
 	this.font_changed();
 }

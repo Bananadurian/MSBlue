@@ -1,8 +1,8 @@
 // ==PREPROCESSOR==
 // @name "Spectrogram Seekbar"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // @import "%fb2k_component_path%samples\js\seekbar.js"
@@ -20,8 +20,11 @@ var spectrogram_cache = folders.data + 'spectrogram_cache\\';
 
 var panel = new _panel();
 var seekbar = new _seekbar(0, 0, 0, 0, true);
-if (fb.IsPlaying) on_playback_new_track(fb.GetNowPlaying());
-else on_item_focus_change();
+
+if (fb.IsPlaying)
+	on_playback_new_track(fb.GetNowPlaying());
+else
+	on_item_focus_change();
 
 function on_item_focus_change() {
 	seekbar.item_focus_change();
@@ -54,6 +57,10 @@ function on_paint(gr) {
 
 function on_playback_new_track(metadb) {
 	seekbar.playback_new_track(metadb);
+}
+
+function on_playback_pause() {
+	seekbar.playback_seek();
 }
 
 function on_playback_seek() {

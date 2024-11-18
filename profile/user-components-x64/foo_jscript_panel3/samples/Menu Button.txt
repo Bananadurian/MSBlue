@@ -1,8 +1,8 @@
 // ==PREPROCESSOR==
 // @name "Menu Button"
 // @author "marc2003"
+// @import "lodash"
 // @import "%fb2k_component_path%helpers.txt"
-// @import "%fb2k_component_path%samples\js\lodash.min.js"
 // @import "%fb2k_component_path%samples\js\common.js"
 // @import "%fb2k_component_path%samples\js\panel.js"
 // ==/PREPROCESSOR==
@@ -35,6 +35,7 @@ function on_mouse_rbtn_up(x, y) {
 		_help(0, bs);
 		return true;
 	}
+
 	return panel.rbtn_up(x, y);
 }
 
