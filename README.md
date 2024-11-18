@@ -8,8 +8,6 @@ Foobar2000 Customized Interface
 
 **MSBlue**（Medium Slate Blue）是一个基于 [**foobar2000-x64_v2.1.x**](https://www.foobar2000.org/download)、[**Columns UI**](https://github.com/reupen/columns_ui) 定制版本。
 
-> 关于名字：以主题色  命名的。
-
 ## 2. 使用
 
 1. 下载 **64bit** 的 [Foobar2000](https://www.foobar2000.org/download);
@@ -36,8 +34,11 @@ Foobar2000 Customized Interface
 1. 下载电台封面到一个指定文件夹中（建议封面命名和电台名字一致，方便后续使用）；
 
 2. 打开 `Foobar -> Preferences -> Display -> Album art -> Front cover`，添加电台封面所在路径，
+	
 	示例参数：
+	
 	利用电台Url标识设置路径：`$if($strstr(%path%,'://'),E:\Music\_Extras\Radio\%title%.*)`；
+	
 	固定路径：`E:\Music\_Extras\Radio\%title%.*`（优先级最低，不然会覆盖同名歌曲）。
 
 3. 需要显示封面的地方选择 `Front cover` 即可显示（`Artist` 设置类似）。
