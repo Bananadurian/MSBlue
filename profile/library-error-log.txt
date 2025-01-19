@@ -5,3 +5,4 @@ file://E:\Music\A04-Japanese\XG\2023 SHOOTING STAR [16-44-FLAC]	Object not found
 file://E:\Music\A04-Japanese\XG\2023 NEW DNA [16-44-FLAC]	Object not found	133666333673779644
 file://E:\Music	file not found	133747549953696111
 file://D:\@MusicLib	file not found	133763913724176549
+file://D:\11_MusicLib\11.12_Cantopop\AGA\20180122_Luna_[ncm-16-44-FLAC]	Object not found	133782812466190275
