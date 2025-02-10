@@ -2,11 +2,13 @@
 
 ## 1. 简介
 
-![](/imgs/UI.png)
+![](/imgs/UI2.png)
 
 Foobar2000 Customized Interface
 
-**MSBlue**（Medium Slate Blue）是一个基于 [**foobar2000-x64_v2.1.x**](https://www.foobar2000.org/download)、[**Columns UI**](https://github.com/reupen/columns_ui) 定制版本。
+**MSBlue**（Medium Slate Blue）是一个基于 [**foobar2000-x64_v2.2.x**](https://www.foobar2000.org/download)、[**Columns UI**](https://github.com/reupen/columns_ui) 定制版本。
+
+> 仅在WIN11测试。
 
 ## 2. 使用
 
@@ -44,3 +46,7 @@ Foobar2000 Customized Interface
 3. 需要显示封面的地方选择 `Front cover` 即可显示（`Artist` 设置类似）。
 
 > `/imgs/Radio`：内置的几个电台封面。
+
+## 4. 字体
+
+更纱黑体：[be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic)
