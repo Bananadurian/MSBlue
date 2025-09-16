@@ -17,6 +17,14 @@ profile/js_data/
 profile/configuration/foo_enhanced_playcount.dll.cfg
 profile/configuration/foo_scrobble.dll.cfg
 
+# 2025-09-15 忽略个人媒体库、个人播放列表
+# profile/library-v2.0/
+# profile/playlists-v2.0/
+
+# 忽略歌词
+# profile/lyrics/
+
+
 # 下面是Python模板内容
 
 # Byte-compiled / optimized / DLL files
