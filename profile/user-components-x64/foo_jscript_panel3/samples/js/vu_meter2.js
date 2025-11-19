@@ -175,10 +175,10 @@ function _vu_meter(x, y, w, h) {
 				if (this.RMS_levels[c]) {
 					var rms_db = _clamp(this.to_db(this.RMS_levels[c]), this.minDB, this.maxDB);
 
-					if (this.properties.meter_style.value == 0) { // smooth mode
+					if (smooth_mode) {
 						var width = Math.round(bar_width * (rms_db - this.minDB) / this.dBrange);
 						gr.FillRectangle(this.x, this.y + (bar_height * c), width, bar_height - 1, this.colours.bar);
-					} else { // block mode
+					} else {
 						var blocks = Math.round(block_count * (rms_db - this.minDB) / this.dBrange);
 						var width = blocks * block_width;
 						gr.FillRectangle(this.x, this.y + (bar_height * c), width, bar_height - 1, this.colours.bar);

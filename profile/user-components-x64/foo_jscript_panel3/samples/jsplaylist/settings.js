@@ -101,12 +101,12 @@ function settings_checkboxes_action(id, status, parentId) {
 		case 0:
 			eval(p.settings.pages[parentId].elements[id].linkedVariable + " = " + status);
 			window.SetProperty("JSPLAYLIST.Show Wallpaper", status);
-			images.wallpaper = get_wallpaper();
+			update_wallpaper();
 			break;
 		case 4:
 			eval(p.settings.pages[parentId].elements[id].linkedVariable + " = " + status);
 			window.SetProperty("JSPLAYLIST.Wallpaper Blurred", status);
-			images.wallpaper = get_wallpaper();
+			update_wallpaper();
 			break;
 		}
 		break;
@@ -149,7 +149,7 @@ function settings_radioboxes_action(id, status, pid) {
 			p.settings.pages[pid].elements[3].status = id == 3;
 			properties.wallpapertype = id == 1 ? 0 : id == 2 ? 4 : -1;
 			window.SetProperty("JSPLAYLIST.Wallpaper Type", properties.wallpapertype);
-			images.wallpaper = get_wallpaper();
+			update_wallpaper();
 		}
 
 		full_repaint();
@@ -351,7 +351,7 @@ function settings_textboxes_action(pageId, elementId) {
 			if (new_label.length && new_label != label) {
 				properties.wallpaperpath = new_label;
 				window.SetProperty("JSPLAYLIST.Default Wallpaper Path", properties.wallpaperpath);
-				images.wallpaper = get_wallpaper();
+				update_wallpaper();
 			}
 			break;
 		}

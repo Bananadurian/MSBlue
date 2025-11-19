@@ -131,13 +131,14 @@ function get_art(metadb, cachekey, art_id) {
 	window.SetTimeout(function () {
 		metadb.GetAlbumArtThumbAsync(window.ID, art_id);
 	}, 10);
+
 	return img;
 }
 
 function drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, auto_fill, border, opacity) {
-	if (!img || !dst_w || !dst_h) {
+	if (!img || !dst_w || !dst_h) 
 		return;
-	}
+
 	if (auto_fill) {
 		if (img.Width / img.Height < dst_w / dst_h) {
 			var src_x = 0;
@@ -161,9 +162,31 @@ function drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, auto_fill, border, opaci
 		dst_h = h;
 		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
 	}
+
 	if (border) {
 		gr.DrawRectangle(dst_x, dst_y, dst_w - 1, dst_h - 1, 1, border);
 	}
+}
+
+function drawBackground(gr) {
+	gr.Clear(g_colour_background);
+
+	if (!ppt.wallpapermode || !g_wallpaperImg) 
+		return;
+
+	if (g_wallpaperImg.Width / g_wallpaperImg.Height < brw.w / brw.h) {
+		var src_x = 0;
+		var src_w = g_wallpaperImg.Width;
+		var src_h = Math.round(brw.h * g_wallpaperImg.Width / brw.w);
+		var src_y = Math.round((g_wallpaperImg.Height - src_h) / 2);
+	} else {
+		var src_y = 0;
+		var src_w = Math.round(brw.w * g_wallpaperImg.Height / brw.h);
+		var src_h = g_wallpaperImg.Height;
+		var src_x = Math.round((g_wallpaperImg.Width - src_w) / 2);
+	}
+
+	gr.DrawBitmap(g_wallpaperImg, brw.x, brw.y, brw.w, brw.h, src_x + 3, src_y + 3, src_w - 6, src_h - 6, ppt.wallpaperopacity);
 }
 
 function drawSelectedRectangle(gr, x, y, w, h) {
@@ -241,27 +264,37 @@ function button(normal, hover, down) {
 }
 
 function setWallpaperImg() {
-	if (g_wallpaperImg) g_wallpaperImg.Dispose();
-	g_wallpaperImg = null;
-
-	switch (ppt.wallpapermode) {
-	case 0:
-		return;
-	case 1:
-		var metadb = fb.GetNowPlaying();
-		if (metadb) g_wallpaperImg = metadb.GetAlbumArt();
-		break;
-	case 2:
-		if (utils.IsFile(ppt.wallpaperpath)) {
-			g_wallpaperImg = utils.LoadImage(ppt.wallpaperpath);
-		} else {
-			g_wallpaperImg = utils.LoadImage(fb.ProfilePath + ppt.wallpaperpath);
-		}
-		break;
+	if (g_wallpaperImg) {
+		g_wallpaperImg.Dispose();
+		g_wallpaperImg = null;
 	}
 
-	if (g_wallpaperImg && ppt.wallpaperblurred) {
-		g_wallpaperImg.StackBlur(ppt.wallpaperblur);
+	if (ppt.wallpapermode == 0)
+		return;
+
+	var metadb = fb.GetNowPlaying();
+	if (!metadb)
+		return;
+
+	var img = null;
+
+	if (ppt.wallpapermode == 1) {
+		img = metadb.GetAlbumArt();
+	} else if (ppt.wallpapermode == 2) {
+		if (utils.IsFile(ppt.wallpaperpath)) {
+			img = utils.LoadImage(ppt.wallpaperpath);
+		} else {
+			img = utils.LoadImage(fb.ProfilePath + ppt.wallpaperpath);
+		}
+	}
+
+	if (img) {
+		if (ppt.wallpaperblurred) {
+			img.StackBlur(ppt.wallpaperblur);
+		}
+
+		g_wallpaperImg = img.CreateBitmap();
+		img.Dispose();
 	}
 }
 

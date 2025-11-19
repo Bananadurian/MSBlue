@@ -6,3 +6,5 @@ file://E:\Music\A04-Japanese\XG\2023 NEW DNA [16-44-FLAC]	Object not found	13366
 file://E:\Music	file not found	133747549953696111
 file://D:\@MusicLib	file not found	133763913724176549
 file://D:\11_MusicLib\11.12_Cantopop\AGA\20180122_Luna_[ncm-16-44-FLAC]	Object not found	133782812466190275
+file://D:\11_MusicLib\11.13_E-Pop\Avril Lavigne\Art	Object not found	134072364562674095
+file://D:\11_MusicLib\11.54_Rock\Linkin Park\20240412_Papercuts [16&24-44&48-FLAC]	Object not found	134078329337831081

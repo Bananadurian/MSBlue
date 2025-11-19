@@ -12,6 +12,51 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h;
 	}
 
+	this.refresh = function (force) {
+		if (force) {
+			this.font = JSON.parse(panel.fonts.normal);
+		}
+
+		this.default_colour = this.properties.albumart.enabled ? RGB(240, 240, 240) : panel.colours.text;
+
+		var tmp = '';
+		var tfo = panel.get_tfo(this.properties.text_tf.value);
+
+		if (panel.prefer_playing()) {
+			var loc = plman.GetPlayingItemLocation();
+
+			if (loc.IsValid) {
+				tmp = tfo.EvalPlaylistItem(loc.PlaylistIndex, loc.PlaylistItemIndex);
+			} else {
+				tmp = tfo.Eval();
+			}
+		} else {
+			var PlaylistIndex = plman.ActivePlaylist;
+			var PlaylistItemIndex = plman.GetPlaylistFocusItemIndex(PlaylistIndex);
+
+			if (PlaylistIndex > -1 && PlaylistItemIndex > -1) {
+				tmp = tfo.EvalPlaylistItem(PlaylistIndex, PlaylistItemIndex);
+			}
+		}
+
+		if (force || tmp != this.text) {
+			this.clear_layout()
+			this.text = tmp;
+
+			if (this.text.length) {
+				if (this.properties.layout.value == 1) {
+					this.text_layout = utils.CreateTextLayout(this.text, this.font.Name, this.font.Size, this.font.Weight, this.font.Style, this.font.Stretch, 2, 0);
+				} else {
+					this.text_layout = utils.CreateTextLayout(this.text, this.font.Name, this.font.Size, this.font.Weight, this.font.Style, this.font.Stretch, this.properties.halign.value, this.properties.valign.value);
+				}
+			}
+		}
+
+		this.size();
+		window.Repaint();
+	}
+
+// callbacks begin
 	this.metadb_changed = function () {
 		this.refresh();
 	}
@@ -32,17 +77,17 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 	this.paint = function (gr) {
 		if (this.properties.albumart.enabled) {
 			if (this.properties.albumart_blur.enabled) {
-				_drawImage(gr, albumart.blur_img, 0, 0, panel.w, panel.h, image.crop);
+				_drawImage(gr, albumart.bitmap.blur, 0, 0, panel.w, panel.h, image.crop);
 				_drawOverlay(gr, 0, 0, panel.w, panel.h, 120);
 			} else {
-				_drawImage(gr, albumart.img, 0, 0, panel.w, panel.h, image.crop);
+				_drawImage(gr, albumart.bitmap.normal, 0, 0, panel.w, panel.h, image.crop);
 				_drawOverlay(gr, 0, 0, panel.w, panel.h, 160);
 			}
 		}
 
 		if (this.properties.layout.value > 0) {
 			var border = this.properties.albumart.enabled ? RGB(150, 150, 150) : panel.colours.text;
-			_drawImage(gr, albumart.img, albumart.x, albumart.y, albumart.w, albumart.h, albumart.properties.aspect.value, 1.0, border);
+			_drawImage(gr, albumart.bitmap.normal, albumart.x, albumart.y, albumart.w, albumart.h, albumart.properties.aspect.value, 1.0, border);
 		}
 
 		if (this.text_layout) {
@@ -163,54 +208,6 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 		window.Repaint();
 	}
 
-	this.refresh = function (force) {
-		this.default_colour = this.properties.albumart.enabled ? RGB(240, 240, 240) : panel.colours.text;
-
-		if (panel.metadb) {
-			var tmp = '';
-			var tfo = panel.get_tfo(this.properties.text_tf.value);
-
-			if (panel.prefer_playing()) {
-				var loc = plman.GetPlayingItemLocation();
-
-				if (loc.IsValid) {
-					tmp = tfo.EvalPlaylistItem(loc.PlaylistIndex, loc.PlaylistItemIndex);
-				} else {
-					tmp = tfo.Eval();
-				}
-			} else {
-				var PlaylistIndex = plman.ActivePlaylist;
-				var PlaylistItemIndex = plman.GetPlaylistFocusItemIndex(PlaylistIndex);
-
-				if (PlaylistIndex > -1 && PlaylistItemIndex > -1) {
-					tmp = tfo.EvalPlaylistItem(PlaylistIndex, PlaylistItemIndex);
-				} else {
-					tmp = tfo.EvalWithMetadb(panel.metadb);
-				}
-			}
-
-			if (force || tmp != this.text) {
-				this.clear_layout()
-				this.text = tmp;
-
-				if (this.text.length) {
-					var font = JSON.parse(panel.fonts.normal);
-
-					if (this.properties.layout.value == 1) {
-						this.text_layout = utils.CreateTextLayout(this.text, font.Name, font.Size, font.Weight, font.Style, font.Stretch, 2, 0);
-					} else {
-						this.text_layout = utils.CreateTextLayout(this.text, font.Name, font.Size, font.Weight, font.Style, font.Stretch, this.properties.halign.value, this.properties.valign.value);
-					}
-				}
-			}
-		} else {
-			this.clear_layout();
-		}
-
-		this.size();
-		window.Repaint();
-	}
-
 	this.size = function () {
 		this.text_height = 0;
 		var margin = _scale(12);
@@ -294,6 +291,7 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 
 		return true;
 	}
+// callbacks end
 
 	panel.display_objects.push(this);
 	this.x = x;
@@ -309,6 +307,7 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 	this.my = 0;
 	this.offset = 0;
 	this.text = '';
+	this.font = JSON.parse(panel.fonts.normal);
 	this.help_url = 'https://jscript-panel.github.io/docs/guides/font-rgb/';
 
 	this.properties = {
@@ -320,7 +319,7 @@ function _text_display(x, y, w, h, buttons_or_rating) {
 		albumart_blur : new _p('2K3.TEXT.ALBUMART.BLUR', true),
 		layout : new _p('2K3.TEXT.LAYOUT', 0), // 0 text only, 1 album art top text bottom 2 album art left text right
 		margin : new _p('2K3.TEXT.MARGIN', 6),
-	}
+	};
 
 	if (this.properties.text_tf.value.empty()) {
 		this.properties.text_tf.value = utils.ReadUTF8(fb.ComponentPath + 'samples\\text\\text_display_default');

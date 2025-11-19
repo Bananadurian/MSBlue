@@ -125,6 +125,14 @@ function _dispose() {
 	});
 }
 
+function _drawImageOrBitmap(gr, img, dst_x, dst_y, dst_w, dst_h, src_x, src_y, src_w, src_h, opacity) {
+	if (typeof img.Path == 'string') {
+		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, src_x, src_y, src_w, src_h, opacity);
+	} else {
+		gr.DrawBitmap(img, dst_x, dst_y, dst_w, dst_h, src_x, src_y, src_w, src_h, opacity);
+	}
+}
+
 function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity, border) {
 	if (!img)
 		return [];
@@ -132,7 +140,7 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity, border) 
 	switch (true) {
 	case (dst_w == dst_h && img.Width == img.Height) || (dst_w == img.Width && dst_h == img.Height):
 	case mode == image.stretch:
-		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
+		_drawImageOrBitmap(gr, img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
 		break;
 	case mode == image.crop:
 	case mode == image.crop_top:
@@ -148,7 +156,7 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity, border) 
 			var src_x = Math.round((img.Width - src_w) / 2);
 		}
 
-		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, src_x + 3, src_y + 3, src_w - 6, src_h - 6, opacity || 1);
+		_drawImageOrBitmap(gr, img, dst_x, dst_y, dst_w, dst_h, src_x + 3, src_y + 3, src_w - 6, src_h - 6, opacity || 1);
 		break;
 	case mode == image.full:
 	case mode == image.full_top_align:
@@ -160,7 +168,8 @@ function _drawImage(gr, img, dst_x, dst_y, dst_w, dst_h, mode, opacity, border) 
 		dst_y = mode == image.full_top_align ? dst_y : dst_y + Math.round((dst_h - h) / 2);
 		dst_w = w;
 		dst_h = h;
-		gr.DrawImage(img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
+
+		_drawImageOrBitmap(gr, img, dst_x, dst_y, dst_w, dst_h, 0, 0, img.Width, img.Height, opacity || 1);
 		break;
 	}
 

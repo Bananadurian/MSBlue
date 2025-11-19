@@ -1,17 +1,10 @@
 function _albumart(x, y, w, h) {
-	this.blur_it = function () {
-		var blur_it = false;
-
+	this.want_blur = function () {
 		if (panel.display_objects.length) {
 			var properties = panel.display_objects[0].properties;
-			blur_it = properties.albumart.enabled && properties.albumart_blur.enabled;
+			return properties.albumart.enabled && properties.albumart_blur.enabled;
 		} else {
-			blur_it = this.is_review_panel;
-		}
-
-		if (blur_it) {
-			this.blur_img = this.img.Clone();
-			this.blur_img.StackBlur(120);
+			return this.is_review_panel;
 		}
 	}
 
@@ -113,14 +106,21 @@ function _albumart(x, y, w, h) {
 		this.reset_images();
 
 		if (img) {
-			this.img = img;
-			this.blur_it();
-			this.tooltip = 'Original dimensions: ' + this.img.Width + 'x' + this.img.Height + 'px';
-			this.path = this.img.Path;
+			this.tooltip = 'Original dimensions: ' + img.Width + 'x' + img.Height + 'px';
+			this.path = img.Path;
 
 			if (this.path.length) {
 				this.tooltip += '\nPath: ' + this.path;
 			}
+
+			this.bitmap.normal = img.CreateBitmap();
+
+			if (this.want_blur()) {
+				img.StackBlur(120);
+				this.bitmap.blur = img.CreateBitmap();
+			}
+
+			img.Dispose();
 		}
 
 		window.Repaint();
@@ -131,7 +131,7 @@ function _albumart(x, y, w, h) {
 		this.my = y;
 
 		if (this.containsXY(x, y)) {
-			if (this.img) {
+			if (this.bitmap.normal) {
 				_tt(this.tooltip);
 			}
 
@@ -148,26 +148,27 @@ function _albumart(x, y, w, h) {
 	}
 
 	this.paint = function (gr) {
-		if (!this.img)
+		if (!this.bitmap.normal)
 			return;
 
 		if (this.is_review_panel) {
-			_drawImage(gr, this.img, this.x, this.y, this.w, this.h, this.properties.aspect.value == image.full ? image.full_top_align : this.properties.aspect.value, 1.0, RGB(150, 150, 150));
+			_drawImage(gr, this.bitmap.normal, this.x, this.y, this.w, this.h, this.properties.aspect.value == image.full ? image.full_top_align : this.properties.aspect.value, 1.0, RGB(150, 150, 150));
 		} else {
-			_drawImage(gr, this.img, this.x, this.y, this.w, this.h, this.properties.aspect.value);
+			_drawImage(gr, this.bitmap.normal, this.x, this.y, this.w, this.h, this.properties.aspect.value);
 		}
 	}
 
 	this.reset_images = function () {
-		if (this.img) {
-			this.img.Dispose();
+		if (this.bitmap.normal) {
+			this.bitmap.normal.Dispose();
+			this.bitmap.normal = null;
 		}
 
-		if (this.blur_img) {
-			this.blur_img.Dispose();
+		if (this.bitmap.blur) {
+			this.bitmap.blur.Dispose();
+			this.bitmap.blur = null;
 		}
 
-		this.img = this.blur_img = null;
 		this.tooltip = this.path = '';
 	}
 
@@ -296,8 +297,6 @@ function _albumart(x, y, w, h) {
 	this.mx = 0;
 	this.my = 0;
 	this.tooltip = '';
-	this.img = null;
-	this.blur_img = null;
 	this.image_index = 0;
 	this.path = null;
 	this.hover = false;
@@ -306,6 +305,11 @@ function _albumart(x, y, w, h) {
 	this.custom_id = -1;
 	this.custom_type = -1;
 	this.help_text = utils.ReadUTF8(fb.ComponentPath + 'samples\\text\\albumart_help');
+
+	this.bitmap = {
+		normal : null,
+		blur : null,
+	};
 
 	this.properties = {
 		aspect : new _p('2K3.ARTREADER.ASPECT', image.full),

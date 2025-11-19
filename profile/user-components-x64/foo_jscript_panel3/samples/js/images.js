@@ -4,16 +4,8 @@ function _images() {
 	}
 
 	this.draw_blurred_image = function (gr) {
-		if (!this.image)
-			return;
-
-		if (!this.blurred_image) {
-			this.blurred_image = this.image.Clone();
-			this.blurred_image.StackBlur(120);
-		}
-
 		gr.Clear(RGB(30, 30, 30));
-		_drawImage(gr, this.blurred_image, 0, 0, panel.w, panel.h, image.crop, this.properties.blur_opacity.value);
+		_drawImage(gr, this.bitmap.blur, 0, 0, panel.w, panel.h, image.crop, this.properties.blur_opacity.value);
 	}
 
 	this.download = function () {
@@ -139,22 +131,19 @@ function _images() {
 
 	this.paint = function (gr) {
 		if (this.is_bio_panel) {
-			if (this.image) {
+			if (this.bitmap.normal) {
 				this.draw_blurred_image(gr);
 				_drawOverlay(gr, 0, 0, panel.w, panel.h, 180);
-				_drawImage(gr, this.image, this.x, this.y, this.w, this.h, this.properties.aspect.value == image.full ? image.full_top_align : this.properties.aspect.value, 1.0, RGB(150, 150, 150));
+				_drawImage(gr, this.bitmap.normal, this.x, this.y, this.w, this.h, this.properties.aspect.value == image.full ? image.full_top_align : this.properties.aspect.value, 1.0, RGB(150, 150, 150));
 			} else {
 				_drawOverlay(gr, 0, 0, panel.w, panel.h);
 			}
-		} else {
-			if (!this.image)
-				return;
-
+		} else if (this.bitmap.normal) {
 			if (this.properties.aspect.value == image.full) {
 				this.draw_blurred_image(gr);
-				_drawImage(gr, this.image, this.x + 20, this.y + 20, this.w - 40, this.h - 40, this.properties.aspect.value, 1.0, RGB(150, 150, 150));
+				_drawImage(gr, this.bitmap.normal, this.x + 20, this.y + 20, this.w - 40, this.h - 40, this.properties.aspect.value, 1.0, RGB(150, 150, 150));
 			} else {
-				_drawImage(gr, this.image, this.x, this.y, this.w, this.h, this.properties.aspect.value);
+				_drawImage(gr, this.bitmap.normal, this.x, this.y, this.w, this.h, this.properties.aspect.value);
 			}
 		}
 	}
@@ -311,16 +300,15 @@ function _images() {
 	}
 
 	this.reset_image = function () {
-		if (this.image) {
-			this.image.Dispose();
+		if (this.bitmap.normal) {
+			this.bitmap.normal.Dispose();
+			this.bitmap.normal = null;
 		}
 
-		if (this.blurred_image) {
-			this.blurred_image.Dispose();
+		if (this.bitmap.blur) {
+			this.bitmap.blur.Dispose();
+			this.bitmap.blur = null;
 		}
-
-		this.image = null;
-		this.blurred_image = null;
 	}
 
 	this.update = function () {
@@ -333,7 +321,14 @@ function _images() {
 		this.reset_image();
 
 		if (this.image_index < this.image_paths.length) {
-			this.image = utils.LoadImage(this.image_paths[this.image_index]);
+			var img = utils.LoadImage(this.image_paths[this.image_index]);
+
+			if (img) {
+				this.bitmap.normal = img.CreateBitmap();
+				img.StackBlur(120);
+				this.bitmap.blur = img.CreateBitmap();
+				img.Dispose();
+			}
 		}
 	}
 
@@ -398,12 +393,15 @@ function _images() {
 	this.artist = '';
 	this.artists = {};
 	this.properties = {};
-	this.image = null;
-	this.blurred_image = null;
 	this.image_index = 0;
 	this.time = 0;
 	this.counter = 0;
 	this.is_bio_panel = panel.text_objects.length == 1 && panel.text_objects[0].name == 'lastfm_bio';
+
+	this.bitmap = {
+		normal : null,
+		blur : null,
+	};
 
 	this.properties = {
 		source : new _p('2K3.IMAGES.SOURCE', 0), // 0 custom folder 1 last.fm

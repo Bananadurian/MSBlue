@@ -767,7 +767,7 @@ function on_paint(gr) {
 
 function on_playback_dynamic_info_track(type) {
 	if (type == 1) {
-		images.wallpaper = get_wallpaper();
+		update_wallpaper();
 
 		if (properties.enableDynamicColours) {
 			on_colours_changed();
@@ -778,7 +778,7 @@ function on_playback_dynamic_info_track(type) {
 }
 
 function on_playback_new_track() {
-	images.wallpaper = get_wallpaper();
+	update_wallpaper();
 
 	if (properties.enableDynamicColours) {
 		on_colours_changed();
@@ -799,8 +799,7 @@ function on_playback_queue_changed() {
 
 function on_playback_stop(reason) {
 	if (reason != 2) {
-		if (images.wallpaper) images.wallpaper.Dispose();
-		images.wallpaper = null
+		update_wallpaper();
 
 		if (properties.enableDynamicColours) {
 			on_colours_changed();
@@ -933,7 +932,8 @@ function DrawWallpaper(gr) {
 		var src_h = images.wallpaper.Height;
 		var src_x = Math.round((images.wallpaper.Width - src_w) / 2);
 	}
-	gr.DrawImage(images.wallpaper, 0, p.list.y, ww, p.list.h, src_x, src_y, src_w, src_h, 0.1);
+
+	gr.DrawBitmap(images.wallpaper, 0, p.list.y, ww, p.list.h, src_x, src_y, src_w, src_h, 0.1);
 }
 
 function GetKeyboardMask() {
@@ -1163,7 +1163,7 @@ function init() {
 	get_font();
 	get_colours();
 	plman.SetActivePlaylistContext();
-	images.wallpaper = get_wallpaper();
+	update_wallpaper();
 	g_stub_image = fb.GetAlbumArtStub(cGroup.art_id);
 
 	p.list = new oList("p.list");
@@ -1301,14 +1301,19 @@ function get_colours() {
 	}
 }
 
-function get_wallpaper() {
+function update_wallpaper() {
+	if (images.wallpaper) {
+		images.wallpaper.Dispose();
+		images.wallpaper = null;
+	}
+
 	if (!properties.showwallpaper)
-		return null;
+		return;
 
 	var metadb = fb.GetNowPlaying();
 
 	if (!metadb)
-		return null;
+		return;
 
 	var img = null;
 
@@ -1322,11 +1327,15 @@ function get_wallpaper() {
 		img = metadb.GetAlbumArt(properties.wallpapertype);
 	}
 
-	if (img && properties.wallpaperblurred) {
+	if (!img)
+		return;
+
+	if (properties.wallpaperblurred) {
 		img.StackBlur(properties.wallpaperblurvalue);
 	}
 
-	return img;
+	images.wallpaper =  img.CreateBitmap();
+	img.Dispose();
 }
 
 var g_middle_clicked = false;

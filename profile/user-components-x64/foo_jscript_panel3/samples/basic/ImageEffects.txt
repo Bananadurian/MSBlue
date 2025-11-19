@@ -4,12 +4,6 @@
 // @import "%fb2k_component_path%helpers.txt"
 // ==/PREPROCESSOR==
 
-/*
-The ApplyEffect method used in this sample requires Windows 10
-or later. If used on earlier versions, a script error will
-be thrown.
-*/
-
 var img = utils.LoadImage(fb.ComponentPath + 'samples\\images\\1.webp');
 var copy = null;
 

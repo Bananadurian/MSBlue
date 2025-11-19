@@ -188,12 +188,6 @@ function on_mouse_wheel(step) {
 }
 
 function on_paint(gr) {
-	gr.Clear(g_colour_background);
-
-	if (ppt.wallpapermode != 0 && g_wallpaperImg) {
-		drawImage(gr, g_wallpaperImg, brw.x, brw.y, brw.w, brw.h, true, null, ppt.wallpaperopacity);
-	}
-
 	brw.draw(gr);
 }
 
@@ -222,6 +216,7 @@ function on_playback_new_track() {
 function on_playback_stop(reason) {
 	if (reason != 2) {
 		setWallpaperImg();
+
 		if (ppt.enableDynamicColours) {
 			on_colours_changed();
 		}
@@ -323,7 +318,12 @@ function oBrowser() {
 	}
 
 	this.draw = function (gr) {
-		if (this.rows.length != plman.PlaylistCount) this.populate();
+		drawBackground(gr)
+
+		if (this.rows.length != plman.PlaylistCount) {
+			this.populate();
+		}
+
 		this.getlimits();
 
 		if (this.rows.length > 0) {

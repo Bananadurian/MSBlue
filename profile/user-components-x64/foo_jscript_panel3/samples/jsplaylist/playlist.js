@@ -211,8 +211,8 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 
 			var text_left_padding = g_z2;
 			var scrollbar_gap = (p.scrollbar.visible && (p.list.totalRows > p.list.totalRowVisible)) ? 0 : cScrollBar.width;
-			var lg1_right_field_w = this.r1.calc_width2(g_font_group1) + cList.borderWidth * 2;
-			var lg2_right_field_w = this.r2.calc_width2(g_font_group2) + cList.borderWidth * 2;
+			var lg1_right_field_w = this.r1.calc_width2(g_font_group1) + 20;
+			var lg2_right_field_w = this.r2.calc_width2(g_font_group2) + 20;
 
 			var group_text_colour = g_colour_highlight;
 			var group_text_colour_fader = setAlpha(group_text_colour, 180);
@@ -226,13 +226,15 @@ function oItem(row_index, type, metadb, track_index, group_index, track_index_in
 				this.drawText(gr, this.l2, g_font_group2, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg2_right_field_w - scrollbar_gap, cRow.playlist_h, 0);
 				this.drawText(gr, this.r1, g_font_group1, group_text_colour, this.x + cover_size + text_left_padding, (this.y - groupDelta) + 3, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, cRow.playlist_h, 1);
 				this.drawText(gr, this.r2, g_font_group2, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h - groupDelta) - 4, this.w - cover_size - text_left_padding * 5 + 1 - scrollbar_gap, cRow.playlist_h, 1);
-				gr.FillRectangle(this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h * 2 - groupDelta) - 8, this.w - cover_size - text_left_padding * 5 + 2 - scrollbar_gap, 1, group_text_colour);
+
+				var line_x = this.x + cover_size + text_left_padding;
+				var line_y = this.y + (cRow.playlist_h * 2) - groupDelta - 8;
+				var line_w = this.w - line_x - scrollbar_gap - (text_left_padding * 2);
+				gr.FillRectangle(line_x, line_y, line_w, 1, group_text_colour);
 
 				if (this.obj && this.heightInRow > 2) {
 					var lg3_left_field = this.obj.count + (this.obj.count > 1 ? " tracks. " : " track. ") + this.obj.total_group_duration_txt + ".";
-					var lg3_right_field = (this.group_index + 1) + " / " + p.list.groups.length;
-					var lg3_right_field_w = lg3_right_field.calc_width2(g_font_12) + cList.borderWidth * 2;
-					gr.WriteTextSimple(lg3_left_field, g_font_12, group_text_colour_fader, this.x + cover_size + text_left_padding, (this.y + cRow.playlist_h * 2 - groupDelta) - 4, this.w - cover_size - text_left_padding * 4 - lg3_right_field_w - scrollbar_gap, cRow.playlist_h, 0, 0, 1);
+					gr.WriteTextSimple(lg3_left_field, g_font_12, group_text_colour_fader, line_x, line_y + 6, line_w, cRow.playlist_h, 0, 0, 1);
 				}
 			}
 
