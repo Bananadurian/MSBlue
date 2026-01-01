@@ -8,11 +8,11 @@
         <!-- 下方按钮面板，内部横向排列 -->
         <container name="bottom-panel" layout="stack" orientation="horizontal" justify="end" anchor="bottom" width="*" height="36">
             <button name="artist-info" margin="0,0,0,0" anchor="left" width="28" height="28" 
-                background="imgs/artist_28x28.png" 
-                command="mm://View/Popup panels/Show/艺人介绍"/>            
+                background="imgs/users-round.png" 
+                command="mm://View/Popup panels/Show/SMP-艺人资料"/>            
             <button name="album-info" margin="10,0,10,0" anchor="left" width="28" height="28" 
-                background="imgs/album_28x28.png" 
-                command="mm://View/Popup panels/Show/专辑介绍"/>
+                background="imgs/disc-2.png" 
+                command="mm://View/Popup panels/Show/SMP-专辑介绍"/>
         </container>               
 
     </panel>

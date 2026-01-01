@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-![](/imgs/UI2.png)
+![](/imgs/UI3.png)
 
 Foobar2000 Customized Interface
 
@@ -50,3 +50,23 @@ Foobar2000 Customized Interface
 ## 4. 字体
 
 更纱黑体：[be5invis/Sarasa-Gothic](https://github.com/be5invis/Sarasa-Gothic)
+
+## 5. 版本记录
+
+### UI3 (当前版本)
+
+2026-01-01 主要内容：
+
+- `JSpanel3`脚本全部使用`SMP`脚本重构替换，优化性能！
+
+- 新增基于`SMP`的艺人、专辑面板，艺人数据来自本地创建的艺人`Json`数据，未引入`last.fm`，专辑数据来自标签！
+
+- 引入Coverflow面板。
+
+### UI2
+
+![](/imgs/UI1.png)
+
+### UI1
+
+![](/imgs/UI1.png)
