@@ -65,7 +65,7 @@ Foobar2000 Customized Interface
 
 ### UI2
 
-![](/imgs/UI1.png)
+![](/imgs/UI2.png)
 
 ### UI1
 
