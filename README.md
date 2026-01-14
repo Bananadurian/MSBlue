@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-![](/imgs/UI3 1.1.0.png)
+![](/imgs/UI3_v1.1.0.png)
 
 Foobar2000 Customized Interface
 
@@ -66,7 +66,7 @@ Foobar2000 Customized Interface
 - 配色优化。
 - 脚本优化。
 
-![](/imgs/UI3 1.1.0.png)
+![](/imgs/UI3_v1.1.0.png)
 
 #### 1.0.0
 
@@ -78,7 +78,7 @@ Foobar2000 Customized Interface
 
 - 引入Coverflow面板。
 
-![](/imgs/UI3 1.0.0.png)
+![](/imgs/UI3_v1.0.0.png)
 
 ### UI2
 
