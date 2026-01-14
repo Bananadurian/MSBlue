@@ -2,9 +2,13 @@
  * @file album_info.js
  * @author XYSRe
  * @created 2025-12-28
- * @updated 2026-01-01
- * @version 1.8.3
+ * @updated 2026-01-08
+ * @version 1.8.7
  * @description 专辑资料面板 (优化版：Flags 详解 + 单行/多行排版分离 + 布局逻辑优化)
+ * 几个常用开关：
+ * SHOW_COVER 设置封面是否显示
+ * COVER_SCALE 封面比例
+ * SHOW_ARTIST_COVER 是否显示艺人封面
  */
 
 "use strict";
@@ -15,7 +19,7 @@
 
 window.DefineScript("Album Info", {
     author: "XYSRe",
-    version: "1.8.3",
+    version: "1.8.7",
     options: { grab_focus: false }
 });
 
@@ -59,7 +63,8 @@ const MARGIN = _scale(10);              // 通用内边距
 const LINE_H = _scale(16);              // 基础行高
 const LINE_SPACE = _scale(8);           // 行间距
 const COVER_SCALE = 1 / 1;              // 封面宽高比 (正方形)
-const SHOW_COVER = false;               // 开关：是否显示封面
+const SHOW_COVER = true;                // 开关：是否显示封面
+const SHOW_ARTIST_COVER = false;        // 显示封面情况下，是否显示艺人图片
 const ICON_SIZE = _scale(10);           // 信息行小图标尺寸
 const SOURCE_ICON_SIZE = _scale(10);    // 来源/格式图标尺寸
 const DEFAULT_SOURCE_ICON_FILENAME = "cloud.png"; // 默认来源图标
@@ -192,6 +197,7 @@ const SOURCE_ICON_MAP = {
 // 语言映射表
 const LANGUAGE_MAP = {
     "chi": "Chinese", "zho": "Chinese", "zh": "Chinese",
+    "yue": "Cantonese",
     "jpn": "Japanese", "ja": "Japanese",
     "eng": "English", "en": "English",
     "kor": "Korean", "ko": "Korean",
@@ -295,7 +301,7 @@ const AQ_BADGES = {
 // =========================================================================
 
 // TitleFormat 定义
-const tf_album_key = fb.TitleFormat("%date%%album%$meta(EDITION)"); 
+const tf_album_key = fb.TitleFormat("%date%%album%$meta(EDITION)$meta(discsubtitle)"); 
 const tf_album_title = fb.TitleFormat("%album%");
 const tf_album_edition = fb.TitleFormat("$meta(EDITION)");   
 const tf_album_description = fb.TitleFormat("$meta(ALBUMDESCRIPTION)");
@@ -559,12 +565,33 @@ function measure_string(text, font, maxWidth, text_style_flag) {
     };
 }
 
+// 语言代码转换为普通标识
+// function get_language_name(code) {
+//     console.log(code)
+//     if (!code) return "";
+//     let firstCode = Array.isArray(code) ? code[0] : code.split(/[;,]/)[0];
+//     const cleanCode = firstCode.trim().toLowerCase();
+//     return LANGUAGE_MAP[cleanCode] || code;
+// }
+// 语言代码转换为普通标识（兼容多值）
 function get_language_name(code) {
+    // console.log(code);
     if (!code) return "";
-    let firstCode = Array.isArray(code) ? code[0] : code.split(/[;,]/)[0];
-    const cleanCode = firstCode.trim().toLowerCase();
-    return LANGUAGE_MAP[cleanCode] || code;
+
+    // 统一处理为数组：数组直接用，字符串按 ; 或 , 分割
+    let codeList = Array.isArray(code) ? code : code.split(/[;,]/);
+    
+    // 遍历每个代码，清洗并转换为语言名称
+    let nameList = codeList.map(item => {
+        const cleanCode = item.trim().toLowerCase();
+        // 有映射则用映射值，无则保留清洗后的原代码
+        return LANGUAGE_MAP[cleanCode] || cleanCode;
+    });
+
+    // 拼接结果（用分号分隔，保持和输入一致的分隔风格）
+    return nameList.join('; ');
 }
+
 
 // =========================================================================
 // 7. 渲染与绘图 (Rendering & Drawing)
@@ -720,8 +747,16 @@ function load_album_images(metadb) {
 
     imgList = [];
     curImgIndex = 0;
-
-    const tryTypes = [0, 2, 1, 4]; 
+    // const AlbumArtId = {
+    //     front: 0,
+    //     back: 1,
+    //     disc: 2,
+    //     icon: 3,
+    //     artist: 4
+    // };
+    const tryTypes = [0, 1, 2];
+    if (SHOW_ARTIST_COVER) {tryTypes.push(4)};
+    
     for (const typeId of tryTypes) {
         const internalArt = utils.GetAlbumArtV2(metadb, typeId);
         if (internalArt) {

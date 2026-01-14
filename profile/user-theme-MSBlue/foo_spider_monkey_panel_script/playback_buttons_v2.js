@@ -2,8 +2,8 @@
  * @file playback_buttons_v2.js
  * @author XYSRe
  * @created 2025-12-14
- * @updated 2026-01-01
- * @version 1.3.2 (Native Tooltip)
+ * @updated 2026-01-05
+ * @version 1.4.0 (Native Tooltip)
  * @description 修复：完全还原原版 Tooltip 逻辑（移除 Deactivate），修正碰撞检测间隙。
  *              播放控制按钮, 播放模式(Order)写死了几个模式！
  */
@@ -12,7 +12,7 @@
 
 window.DefineScript("Playback Buttons", {
     author: "XYSRe",
-    version: "1.3.2",
+    version: "1.4.0",
     options: { grab_focus: false },
 });
 
@@ -90,6 +90,15 @@ const imgs = {
     order_track_hover: _load_image(IMGS_FOLDER + "order_repeat_track_hover.png"),
     order_shuffle: _load_image(IMGS_FOLDER + "order_shuffle_tracks.png"),
     order_shuffle_hover: _load_image(IMGS_FOLDER + "order_shuffle_tracks_hover.png"),
+
+    replay: _load_image(IMGS_FOLDER + "rotate-ccw.png"),
+    replay_hover: _load_image(IMGS_FOLDER + "rotate-ccw_hover.png"),
+    rewind: _load_image(IMGS_FOLDER + "rewind.png"),
+    rewind_hover: _load_image(IMGS_FOLDER + "rewind_hover.png"),
+    forward: _load_image(IMGS_FOLDER + "fast-forward.png"),
+    forward_hover: _load_image(IMGS_FOLDER + "fast-forward_hover.png"),
+    random: _load_image(IMGS_FOLDER + "dices.png"),
+    random_hover: _load_image(IMGS_FOLDER + "dices_hover.png"),            
 };
 
 const ICON_W = _scale(18);
@@ -185,6 +194,10 @@ function init_ui() {
     buttons.next = new Button({ img_normal: imgs.next, img_hover: imgs.next_hover, func: () => fb.Next(), tiptext: "下一曲" });
     buttons.order = new Button({ img_normal: imgs.order_default, img_hover: imgs.order_default_hover, func: () => toggle_playback_order(), tiptext: "播放模式" });
 
+    buttons.replay = new Button({ img_normal: imgs.replay, img_hover: imgs.replay_hover, func: () => fb.Play(), tiptext: "重放" });
+    buttons.rewind = new Button({ img_normal: imgs.rewind, img_hover: imgs.rewind_hover, func: () => fb.RunMainMenuCommand("Playback/Seek/Back by 5 seconds"), tiptext: "Seek -5s" });
+    buttons.forward = new Button({ img_normal: imgs.forward, img_hover: imgs.forward_hover, func: () => fb.RunMainMenuCommand("Playback/Seek/Ahead by 5 seconds"), tiptext: "Seek +5s" });
+    buttons.random = new Button({ img_normal: imgs.random, img_hover: imgs.random_hover, func: () => fb.Random(), tiptext: "Random" });            
     update_all_states();
 }
 
@@ -263,30 +276,46 @@ init_ui();
 function on_size() {
     if (window.Width <= 0 || window.Height <= 0) return;
 
-    const totalW = (ICON_W * 4) + (ICON_W * 1.5) + (MARGIN * 4); 
+    const totalW = (ICON_W * 5) + (ICON_W * 1.5 * 3) + (MARGIN * 8); 
     let currentX = Math.round((window.Width - totalW) / 2);
     const centerY = Math.round(window.Height / 2);
     const midY = Math.round(centerY - ICON_H / 2);
     const largeY = Math.round(centerY - (ICON_H * 1.5) / 2);
 
+    buttons.replay.x = currentX; buttons.replay.y = midY;
+    buttons.replay.w = ICON_W;   buttons.replay.h = ICON_H;
+    currentX += ICON_W + MARGIN;    
+
     buttons.stop.x = currentX; buttons.stop.y = midY;
     buttons.stop.w = ICON_W;   buttons.stop.h = ICON_H;
     currentX += ICON_W + MARGIN;
 
-    buttons.prev.x = currentX; buttons.prev.y = midY;
-    buttons.prev.w = ICON_W;   buttons.prev.h = ICON_H;
-    currentX += ICON_W + MARGIN;
+    buttons.rewind.x = currentX; buttons.rewind.y = midY;
+    buttons.rewind.w = ICON_W;   buttons.rewind.h = ICON_H;
+    currentX += ICON_W + MARGIN;        
+
+    buttons.prev.x = currentX; buttons.prev.y = largeY;
+    buttons.prev.w = ICON_W * 1.5;   buttons.prev.h = ICON_H * 1.5;
+    currentX += (ICON_W * 1.5) + MARGIN;
 
     buttons.play.x = currentX; buttons.play.y = largeY;
     buttons.play.w = ICON_W * 1.5; buttons.play.h = ICON_H * 1.5;
     currentX += (ICON_W * 1.5) + MARGIN;
 
-    buttons.next.x = currentX; buttons.next.y = midY;
-    buttons.next.w = ICON_W;   buttons.next.h = ICON_H;
-    currentX += ICON_W + MARGIN;
+    buttons.next.x = currentX; buttons.next.y = largeY;
+    buttons.next.w = ICON_W * 1.5;   buttons.next.h = ICON_H * 1.5;
+    currentX += (ICON_W * 1.5) + MARGIN;
+
+    buttons.forward.x = currentX; buttons.forward.y = midY;
+    buttons.forward.w = ICON_W;   buttons.forward.h = ICON_H;
+    currentX += ICON_W + MARGIN;        
 
     buttons.order.x = currentX; buttons.order.y = midY;
     buttons.order.w = ICON_W;   buttons.order.h = ICON_H;
+    currentX += ICON_W + MARGIN; 
+
+    buttons.random.x = currentX; buttons.random.y = midY;
+    buttons.random.w = ICON_W;   buttons.random.h = ICON_H;
 }
 
 function on_paint(gr) {
@@ -363,6 +392,7 @@ function on_mouse_rbtn_up(x, y) {
 }
 
 function on_mouse_rbtn_down(x, y) {
+    // 屏蔽默认右键菜单
     if (buttons.stop.trace(x, y) || buttons.order.trace(x, y)) {
         return true; 
     }

@@ -2,8 +2,8 @@
  * @file BIOGRAPHY.js
  * @author XYSRe
  * @created 2025-12-23
- * @updated 2026-01-01
- * @version 1.6.4
+ * @updated 2026-01-06
+ * @version 1.6.7
  * @description 艺人资料面板 (优化版：修复高度计算Bug，延迟加载ActiveX，增强注释)
  */
 
@@ -15,7 +15,7 @@
 
 window.DefineScript("BIOGRAPHY", {
     author: "XYSRe",
-    version: "1.6.4",
+    version: "1.6.7",
     options: { grab_focus: false }
 });
 
@@ -51,7 +51,7 @@ function load_image(path) {
 // [路径配置] 
 const BASE_PATH = "D:\\11_MusicLib\\_Extras\\"; 
 const JSON_DIR = BASE_PATH + "ArtistBiography\\";
-const ARTIST_COVER_DIR = BASE_PATH + "ArtistCover16x9\\";
+const ARTIST_COVER_DIR = BASE_PATH + "ArtistCover\\";
 const LINK_ICONS_DIR = fb.ProfilePath + "\\user-theme-MSBlue\\imgs\\Links\\";
 
 // [布局常量]
@@ -61,8 +61,8 @@ const ICON_SIZE = _scale(10);         // 详情行小图标大小
 const MARGIN = _scale(10);            // 通用内边距
 const LINE_H = _scale(16);            // 基础文本行高
 const LINE_SPACE = _scale(8);         // 行与行之间的间距
-const COVER_SCALE = 9 / 16;           // 封面图片宽高比
-const COVER_IDENTIFER = "_Cover16x9_"; // 封面文件名特征匹配符
+const COVER_SCALE = 3 / 4;            // 封面图片宽高比 9 / 16
+const COVER_IDENTIFER = "_Cover_";    // 封面文件名特征匹配符
 
 // [GDI 文本绘制标志位]
 // 参考: http://msdn.microsoft.com/en-us/library/dd162498(VS.85).aspx
@@ -340,7 +340,12 @@ function reload_artist_data(metadb) {
     // 获取或创建缓存
     const cacheEntry = get_artist_cache_entry(safeName);
     artistData = cacheEntry.json;
-    errorText = artistData ? "" : "暂无艺人资料: " + artist;
+    if (cacheEntry.jsonError){
+        errorText = cacheEntry.jsonError;
+    }else{
+        errorText = artistData ? "" : "暂无艺人资料: " + safeName;
+    }
+    // errorText = !cacheEntry.jsonError ? "" : cacheEntry.jsonError;
 
     load_images_from_cache(cacheEntry.imgPaths, metadb);
 
@@ -398,6 +403,7 @@ function get_artist_cache_entry(safeName) {
 
     // 未命中：读取 JSON
     let jsonData = null;
+    let jsonErrorData = null;
     const jsonPath = JSON_DIR + safeName + ".json";
     if (utils.IsFile(jsonPath)) {
         try {
@@ -410,13 +416,14 @@ function get_artist_cache_entry(safeName) {
                 jsonData.genres = jsonData.genres.join(", ");
             }
         } catch (e) {
+            errorText = "JSON Error: " + e;
             console.log("JSON Error: " + e);
         }
     }
 
     // 扫描封面路径
     const paths = scan_image_paths(safeName);
-    const entry = { json: jsonData, imgPaths: paths };
+    const entry = { json: jsonData, imgPaths: paths, jsonError: jsonErrorData};
 
     // 缓存清理 (LRU)
     if (ARTIST_CACHE.size >= CACHE_MAX_SIZE) {
@@ -484,19 +491,61 @@ function manage_cycle_timer() {
 }
 
 /**
- * 格式化作品集文本
+ * 获取艺人作品集 (自动从音乐库读取并缓存)
+ * 格式: YYYY-MM-DD - 专辑名
  */
 function get_disco_text() {
-    if (!artistData.DISCOGRAPHY) return "暂无作品集记录";
-    let str = "";
-    for (const album in artistData.DISCOGRAPHY) {
-        const item = artistData.DISCOGRAPHY[album];
-        str += `■ ${album}${item.release ? ` (${item.release})` : ""}\n`;
-        if (item.desc) str += `  ${item.desc}\n`;
-        str += "\n";
+    // 1. 检查缓存：如果已经有数据（且是数组），直接返回 joined 字符串
+    // 注意：这里我们改变了数据结构，从原来的 Object 变成了 Array<String>
+    if (artistData.DISCOGRAPHY && Array.isArray(artistData.DISCOGRAPHY)) {
+        if (artistData.DISCOGRAPHY.length === 0) return "音乐库中暂无该艺人专辑记录";
+        return artistData.DISCOGRAPHY.join("\n"); // 使用双换行让排版更稀疏好看
     }
-    return str;
+
+    // --- 以下是初始化逻辑 (仅在第一次访问时运行) ---
+
+    // 2. 准备查询
+    // artistData.title 是艺人的真实名字 (如 "Guns N' Roses")
+    // 需要处理名字中的单引号，防止查询语法错误
+    const safeQueryName = artistData.title.replace(/'/g, "''");
+    const query = "%artist% HAS " + safeQueryName;
+    
+    // 3. 获取所有相关曲目 handle list 
+    const matches = fb.GetQueryItems(fb.GetLibraryItems(), query);
+    // console.log(matches.Count)
+    let resultList = [];
+
+    if (matches.Count > 0) {
+        // 4. 排序：按日期降序 (最新的在前面)，也就是 0-9 还是 9-0 取决于你的需求
+        // 排序依据: %date% %album%  1 为升序, -1 为降序
+        matches.OrderByFormat(tf_album, -1);
+
+        // 5. 格式化提取
+        // 使用 TitleFormat 直接生成需要的字符串格式
+        // 格式示例: [2023-01-01] - 专辑名
+        const rawStrings = tf_album.EvalWithMetadbs(matches); // 返回原生字符串数组
+
+        // 6. 去重 (核心步骤)
+        // 因为查询返回的是所有歌曲，一张专辑有10首歌就会出现10次
+        // 我们利用 Set 特性去除重复的 "日期 - 专辑" 行
+        const uniqueSet = new Set(rawStrings);
+        
+        // 将 Set 转回数组
+        resultList = Array.from(uniqueSet);
+        
+        // (可选) 如果需要按日期降序(新->旧)，在这里反转数组
+        // resultList.reverse(); 
+    }
+    
+    // 7. 写入缓存到 artistData 对象中 (内存缓存)
+    // 这样下次调用 get_disco_text 就不会再次查询硬盘了
+    artistData.DISCOGRAPHY = resultList;
+
+    // 8. 返回结果
+    if (resultList.length === 0) return "音乐库中暂无该艺人专辑记录";
+    return resultList.join("\n");
 }
+
 
 // =========================================================================
 // 7. 布局与几何计算 (Layout & Geometry)

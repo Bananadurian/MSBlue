@@ -3,7 +3,7 @@
  * @author XYSRe
  * @created 2025-12-16
  * @updated 2026-01-01
- * @version 1.4.2
+ * @version 1.4.3
  * @description 终极重构版：
  * 1. 代码结构化整理，分离配置、工具、逻辑与视图。
  * 2. 将星星拆分为独立对象，纳入全局状态机管理，彻底解决交互闪烁。
@@ -15,7 +15,7 @@
 // 注册脚本信息
 window.DefineScript("Info And Rating", {
     author: "XYSRe",
-    version: "1.4.2",
+    version: "1.4.3",
     options: { grab_focus: false },
 });
 
@@ -510,7 +510,7 @@ function on_size() {
     const titleMeasureFull = measure_string(CONTENTS.title.text, FONTS.Title, max_text_w, TEXT_FLAGS);
     CONTENTS.title.w = titleMeasureFull.Width + _scale(1);
     CONTENTS.title.h = Math.min(titleMeasureFull.Height, LINE_H);
-    CONTENTS.artist.w = measure_string(CONTENTS.artist.text, FONTS.Body, max_text_w, TEXT_FLAGS).Width;
+    CONTENTS.artist.w = measure_string(CONTENTS.artist.text, FONTS.Body, max_text_w, TEXT_FLAGS).Width + _scale(1);
     // _scale(1) GDI、GDI+计算偏差 一个像素容差
     CONTENTS.album.w = measure_string(CONTENTS.album.text, FONTS.Body, max_text_w, TEXT_FLAGS).Width + _scale(1);
     CONTENTS.year.w = CONTENTS.year.text ? measure_string(CONTENTS.year.text, FONTS.Body, max_text_w, TEXT_FLAGS).Width : 0;
