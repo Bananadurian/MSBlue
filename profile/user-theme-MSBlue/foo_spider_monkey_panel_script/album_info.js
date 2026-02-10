@@ -2,8 +2,8 @@
  * @file album_info.js
  * @author XYSRe
  * @created 2025-12-28
- * @updated 2026-01-08
- * @version 1.8.7
+ * @updated 2026-02-06
+ * @version 1.8.8
  * @description 专辑资料面板 (优化版：Flags 详解 + 单行/多行排版分离 + 布局逻辑优化)
  * 几个常用开关：
  * SHOW_COVER 设置封面是否显示
@@ -19,7 +19,7 @@
 
 window.DefineScript("Album Info", {
     author: "XYSRe",
-    version: "1.8.7",
+    version: "1.8.8",
     options: { grab_focus: false }
 });
 
@@ -207,7 +207,7 @@ const LANGUAGE_MAP = {
     "ita": "Italian", "it": "Italian",
     "spa": "Spanish", "es": "Spanish",
     "rus": "Russian", "ru": "Russian",
-    "und": "Undetermined"
+    "und": "Undetermined", "zxx": "Instrumental"
 };
 
 // =========================================================================

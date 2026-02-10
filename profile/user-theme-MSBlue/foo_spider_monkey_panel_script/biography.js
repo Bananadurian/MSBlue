@@ -2,8 +2,8 @@
  * @file BIOGRAPHY.js
  * @author XYSRe
  * @created 2025-12-23
- * @updated 2026-01-06
- * @version 1.6.7
+ * @updated 2026-01-17
+ * @version 1.6.8
  * @description 艺人资料面板 (优化版：修复高度计算Bug，延迟加载ActiveX，增强注释)
  */
 
@@ -112,21 +112,21 @@ const FONTS = {
 
 // [图标资源]
 const LINK_ICONS = {
-    "Genres":       load_image(LINK_ICONS_DIR + "circle-small.png"),
-    "Country":      load_image(LINK_ICONS_DIR + "locate.png"),
-    "Born":         load_image(LINK_ICONS_DIR + "calendar.png"),
-    "Links":        load_image(LINK_ICONS_DIR + "milestone.png"),
-    "Default":      load_image(LINK_ICONS_DIR + "map-pin-house.png"),
-    "Official":     load_image(LINK_ICONS_DIR + "house.png"),
+    "genres_mark":       load_image(LINK_ICONS_DIR + "circle-small.png"),
+    "country_mark":      load_image(LINK_ICONS_DIR + "locate.png"),
+    "born_mark":         load_image(LINK_ICONS_DIR + "calendar.png"),
+    "links_mark":        load_image(LINK_ICONS_DIR + "milestone.png"),
+    "default":      load_image(LINK_ICONS_DIR + "default.png"),
+    "official":     load_image(LINK_ICONS_DIR + "house.png"),
     "soundcloud":   load_image(LINK_ICONS_DIR + "soundcloud.png"),
     "bandcamp":     load_image(LINK_ICONS_DIR + "bandcamp.png"),
-    "Instagram":    load_image(LINK_ICONS_DIR + "Instagram.png"),
-    "X":            load_image(LINK_ICONS_DIR + "X.png"),
-    "TikTok":       load_image(LINK_ICONS_DIR + "TikTok.png"),
-    "YouTube":      load_image(LINK_ICONS_DIR + "YouTube.png"),
-    "Discogs":      load_image(LINK_ICONS_DIR + "Discogs.png"),
-    "ALLMUSIC":     load_image(LINK_ICONS_DIR + "ALLMUSIC.png"),
-    "Musicbrainz":  load_image(LINK_ICONS_DIR + "Musicbrainz.png"),
+    "instagram":    load_image(LINK_ICONS_DIR + "Instagram.png"),
+    "x":            load_image(LINK_ICONS_DIR + "X.png"),
+    "tiktok":       load_image(LINK_ICONS_DIR + "TikTok.png"),
+    "youtube":      load_image(LINK_ICONS_DIR + "YouTube.png"),
+    "discogs":      load_image(LINK_ICONS_DIR + "Discogs.png"),
+    "allmusic":     load_image(LINK_ICONS_DIR + "ALLMUSIC.png"),
+    "musicbrainz":  load_image(LINK_ICONS_DIR + "Musicbrainz.png"),
     "rateyourmusic":load_image(LINK_ICONS_DIR + "rateyourmusic.png"),
     "aoty":         load_image(LINK_ICONS_DIR + "aoty.png"),
     "pitchfork":    load_image(LINK_ICONS_DIR + "pitchfork.png"),
@@ -173,7 +173,7 @@ let scrollY = 0;             // 当前垂直滚动条位置
 let maxScrollY = 0;          // 最大可滚动距离
 let textImg = null;          // 文本内容的离屏渲染缓冲图 (GdiBitmap)
 let errorText = "请选择或播放歌曲..."; // 空状态或错误提示文案
-let isCoverFit = false;      // 封面显示模式 (Fit/Cover)
+let isCoverFit = true;      // 封面显示模式 (Fit/Cover)
 
 // 交互状态
 let activeLinkBtns = [];     // 当前生成的外部链接按钮数组
@@ -259,21 +259,21 @@ function on_paint(gr) {
     currentY += title_h + LINE_SPACE;
     
     // 3.2 风格 (多行)
-    if (LINK_ICONS.Genres) gr.DrawImage(LINK_ICONS.Genres, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.Genres.Width, LINK_ICONS.Genres.Height);
+    if (LINK_ICONS.genres_mark) gr.DrawImage(LINK_ICONS.genres_mark, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.genres_mark.Width, LINK_ICONS.genres_mark.Height);
     gr.GdiDrawText(artistData.genres || "Unknown Genre", FONTS.Body, COLORS.Title, MARGIN * 2.5, currentY, line_w, genres_h, MULTI_LINE_FLAGS);
     currentY += genres_h + LINE_SPACE;
 
     // 3.3 生日
-    if (LINK_ICONS.Born) gr.DrawImage(LINK_ICONS.Born, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.Born.Width, LINK_ICONS.Born.Height);
+    if (LINK_ICONS.born_mark) gr.DrawImage(LINK_ICONS.born_mark, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.born_mark.Width, LINK_ICONS.born_mark.Height);
     gr.GdiDrawText(artistData.born || "-", FONTS.Body, COLORS.Title, MARGIN * 2.5, currentY, line_w, LINE_H, ONE_LINE_FLAGS);
 
     // 3.4 地区 (与生日同一行，靠右侧布局)
-    if (LINK_ICONS.Country) gr.DrawImage(LINK_ICONS.Country, MARGIN * 13, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.Country.Width, LINK_ICONS.Country.Height);
+    if (LINK_ICONS.country_mark) gr.DrawImage(LINK_ICONS.country_mark, MARGIN * 13, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.country_mark.Width, LINK_ICONS.country_mark.Height);
     gr.GdiDrawText(artistData.country || "-", FONTS.Body, COLORS.Title, MARGIN * 14.5, currentY, line_w, LINE_H, ONE_LINE_FLAGS);
     currentY += LINE_H + LINE_SPACE;
 
     // 3.5 链接图标按钮
-    if (LINK_ICONS.Links) gr.DrawImage(LINK_ICONS.Links, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.Links.Width, LINK_ICONS.Links.Height);
+    if (LINK_ICONS.links_mark) gr.DrawImage(LINK_ICONS.links_mark, MARGIN, currentY + Math.ceil(((LINE_H - ICON_SIZE) / 2)), ICON_SIZE, ICON_SIZE, 0, 0, LINK_ICONS.links_mark.Width, LINK_ICONS.links_mark.Height);
     
     activeLinkBtns.forEach(btn => {
         if (!btn.img) return;
@@ -497,9 +497,9 @@ function manage_cycle_timer() {
 function get_disco_text() {
     // 1. 检查缓存：如果已经有数据（且是数组），直接返回 joined 字符串
     // 注意：这里我们改变了数据结构，从原来的 Object 变成了 Array<String>
-    if (artistData.DISCOGRAPHY && Array.isArray(artistData.DISCOGRAPHY)) {
-        if (artistData.DISCOGRAPHY.length === 0) return "音乐库中暂无该艺人专辑记录";
-        return artistData.DISCOGRAPHY.join("\n"); // 使用双换行让排版更稀疏好看
+    if (artistData.discography && Array.isArray(artistData.discography)) {
+        if (artistData.discography.length === 0) return "音乐库中暂无该艺人专辑记录";
+        return artistData.discography.join("\n"); // 使用双换行让排版更稀疏好看
     }
 
     // --- 以下是初始化逻辑 (仅在第一次访问时运行) ---
@@ -539,7 +539,7 @@ function get_disco_text() {
     
     // 7. 写入缓存到 artistData 对象中 (内存缓存)
     // 这样下次调用 get_disco_text 就不会再次查询硬盘了
-    artistData.DISCOGRAPHY = resultList;
+    artistData.discography = resultList;
 
     // 8. 返回结果
     if (resultList.length === 0) return "音乐库中暂无该艺人专辑记录";
@@ -653,7 +653,7 @@ function create_text_buffer() {
     
     if (!artistData || view_w <= 0 || view_h <= 0) return;
 
-    const text = showDiscography ? get_disco_text() : (artistData.ARTISTBIOGRAPHY || "暂无详细简介信息");
+    const text = showDiscography ? get_disco_text() : (artistData.artistbiography || "暂无详细简介信息");
     
     const measured = measure_string(text, FONTS.Body, view_w, MULTI_LINE_FLAGS);
     let fullH = Math.ceil(measured.Height);
@@ -687,6 +687,7 @@ function create_link_buttons() {
     
     for (let key in artistData.links) {
         let url = artistData.links[key];
+        // TODO key 转成小写
         if (url && url.length > 0) {
             activeLinkBtns.push({
                 name: key,
@@ -695,7 +696,7 @@ function create_link_buttons() {
                 y: 0,  // 占位，update_layout_metrics 中计算实际值
                 w: btnSize,
                 h: btnSize,
-                img: LINK_ICONS[key] || LINK_ICONS["Default"], 
+                img: LINK_ICONS[key] || LINK_ICONS["default"], 
                 is_hover: false,
                 tooltip: key,
             });
